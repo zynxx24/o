@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CateringLayout from '@/layouts/CateringLayout.vue'
-import { useForm } from '@inertiajs/vue3'
+import { Head, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
 const props = defineProps<{ carts: any[], user: any }>()
@@ -52,6 +52,7 @@ const eventTypes = ['Pernikahan', 'Ulang Tahun', 'Rapat Kantor', 'Seminar', 'Ari
 
 <template>
     <CateringLayout>
+        <Head title="Checkout Pesanan — CateringKu" />
         <h1 class="text-3xl font-bold text-gray-800 mb-8">📋 Checkout</h1>
 
         <form @submit.prevent="submit" class="grid grid-cols-1 lg:grid-cols-3 gap-8">

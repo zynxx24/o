@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CateringLayout from '@/layouts/CateringLayout.vue'
-import { router, usePage } from '@inertiajs/vue3'
+import { Head, router, usePage } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
 const props = defineProps<{ vendor: any, reviews: any[], menuCategories: any[] }>()
@@ -32,6 +32,7 @@ function addToCart(itemId: number) {
 
 <template>
     <CateringLayout>
+        <Head :title="`${vendor.vendor_name} — CateringKu`" />
         <!-- Banner -->
         <div class="gradient-hero rounded-3xl p-8 md:p-12 mb-8 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-16 -mt-16"></div>

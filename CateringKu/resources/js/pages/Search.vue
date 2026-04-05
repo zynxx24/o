@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CateringLayout from '@/layouts/CateringLayout.vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
 
 const props = defineProps<{
@@ -28,6 +28,7 @@ function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style:
 
 <template>
     <CateringLayout>
+        <Head title="Cari Vendor Katering — CateringKu" />
         <!-- Hero -->
         <div class="gradient-hero rounded-3xl p-8 md:p-10 mb-8 text-white relative overflow-hidden">
             <div class="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-16 -mt-16"></div>

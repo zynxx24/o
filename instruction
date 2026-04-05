@@ -1,0 +1,10 @@
+# 1. Pastikan MySQL jalan
+sudo systemctl start mysql
+
+# 2. Setup pertama kali (install + migrate + seed)
+bash run.sh setup
+
+# 3. Jalankan dev server
+bash run.sh dev
+
+# 4. Buka browser → http://localhost:8000

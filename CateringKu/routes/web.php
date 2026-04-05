@@ -27,6 +27,8 @@ Route::middleware(ShareCartCount::class)->group(function () {
     Route::get('/about', [AboutController::class, 'index'])->name('about');
     Route::get('/contact', [ContactController::class, 'index'])->name('contact');
     Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+    Route::get('/terms', fn () => \Inertia\Inertia::render('Terms'))->name('terms');
+    Route::get('/privacy', fn () => \Inertia\Inertia::render('Privacy'))->name('privacy');
 
     /*
     |--------------------------------------------------------------------------
@@ -49,6 +51,9 @@ Route::middleware(ShareCartCount::class)->group(function () {
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         Route::post('/orders/{id}/review', [OrderController::class, 'storeReview'])->name('orders.review');
+
+        // Profile (public-facing)
+        Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
 
         // Promo validation (API)
         Route::post('/api/promo/validate', [PromoController::class, 'validate_'])->name('promo.validate');

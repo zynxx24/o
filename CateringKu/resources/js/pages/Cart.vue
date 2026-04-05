@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CateringLayout from '@/layouts/CateringLayout.vue'
-import { Link, router } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 
 const props = defineProps<{ carts: any[], totalAmount: number }>()
 
@@ -35,6 +35,7 @@ const isEmpty = props.carts.length === 0 || props.carts.every((c: any) => c.item
 
 <template>
     <CateringLayout>
+        <Head title="Keranjang Belanja — CateringKu" />
         <div class="flex items-center gap-3 mb-8">
             <h1 class="text-3xl font-bold text-gray-800">🛒 Keranjang Belanja</h1>
         </div>

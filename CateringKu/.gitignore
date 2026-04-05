@@ -1,3 +1,4 @@
+# ─── Laravel ─────────────────────────────────
 /.phpunit.cache
 /bootstrap/ssr
 /node_modules
@@ -6,23 +7,59 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/vendor
+
+# ─── Wayfinder (auto-generated) ─────────────
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
-/vendor
-.DS_Store
+
+# ─── Environment ─────────────────────────────
 .env
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/auth.json
+.env.staging
+.env.local
+.env.*.local
+
+# ─── IDE / Editor ────────────────────────────
 /.fleet
 /.idea
 /.nova
 /.vscode
 /.zed
+*.swp
+*.swo
+*~
+
+# ─── OS ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── PHP ─────────────────────────────────────
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+/auth.json
+
+# ─── Node / NPM ─────────────────────────────
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+.pnpm-store
+
+# ─── Logs & Cache ────────────────────────────
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+!storage/framework/cache/data/.gitkeep
+!storage/framework/sessions/.gitkeep
+!storage/framework/views/.gitkeep
+
+# ─── Debug / Profiling ───────────────────────
+/storage/clockwork
+/storage/debugbar
+/_debugbar

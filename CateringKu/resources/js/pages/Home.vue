@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CateringLayout from '@/layouts/CateringLayout.vue'
-import { Link } from '@inertiajs/vue3'
+import { Head, Link } from '@inertiajs/vue3'
 
 interface Vendor {
     vendor_id: number
@@ -45,6 +45,7 @@ function formatRating(r: number) {
 
 <template>
     <CateringLayout>
+        <Head title="Beranda — Temukan Katering Terbaik" />
         <!-- Hero Section -->
         <div class="gradient-hero rounded-3xl p-8 md:p-12 mb-12 text-white relative overflow-hidden shadow-2xl">
             <!-- Background decorations -->

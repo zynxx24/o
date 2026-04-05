@@ -1,0 +1,88 @@
+# Redesign Dashboard Admin & Vendor + Hilangkan Sidebar
+
+## Latar Belakang
+
+Saat ini:
+1. **Sidebar bawaan Laravel Starter Kit** (`AppSidebar.vue`) masih membungkus halaman Admin/Vendor — tapi halaman-halaman itu **sudah punya navbar sendiri** di dalamnya. Hasilnya: double navbar + sidebar kosong ("Laravel Starter Kit / Dashboard / Repository / Documentation").
+2. **Semua role harus bisa akses halaman utama** (Home, Search, Contact dll.) — routing sudah benar (public routes), tidak ada middleware yang memblokir vendor/admin dari halaman publik.
+3. **Dashboard Admin & Vendor terlalu sederhana** — hanya stat cards + tabel biasa. Perlu dikreasikan jauh lebih premium.
+
+## Proposed Changes
+
+### 1. Layout — Hilangkan Sidebar Wrapper untuk Admin/Vendor
+
+Halaman `Admin/*` dan `Vendor/*` **sudah punya navbar internal** yang di-hardcode di setiap page. Mereka tidak butuh `AppLayout` (sidebar) tambahan.
+
+#### [MODIFY] [app.ts](file:///home/wira/tes/o/CateringKu/resources/js/app.ts)
+
+Tambahkan `Admin/*` dan `Vendor/*` ke daftar halaman yang **return null** (no wrapper layout):
+```diff
+- // Admin/*, Vendor/*, Dashboard → AppLayout (authenticated sidebar)
+- default:
+-     return AppLayout;
++ case name.startsWith('Admin/'):
++ case name.startsWith('Vendor/'):
++     return null; // Admin/Vendor pages have their own navbar
++ default:
++     return AppLayout; // Dashboard, settings, etc.
+```
+
+---
+
+### 2. Dashboard Admin — Redesign Premium
+
+#### [MODIFY] [Dashboard.vue](file:///home/wira/tes/o/CateringKu/resources/js/pages/Admin/Dashboard.vue)
+
+Redesign jadi dashboard premium dengan:
+- **Header greeting** dengan waktu hari ini dan animasi
+- **Stat cards** dengan micro-animations, gradients, dan persentase perubahan
+- **Quick action buttons** (Konfirmasi Pesanan, Verifikasi Pembayaran, Baca Pesan)
+- **Revenue chart area** (visual placeholder dengan gradient bar chart)
+- **Recent orders** tabel yang lebih premium dengan row hover effects
+- **Activity timeline** sidebar kanan
+- **Link ke halaman utama** ("Lihat Website →") di navbar agar admin bisa akses public site
+
+---
+
+### 3. Dashboard Vendor — Redesign Premium
+
+#### [MODIFY] [Dashboard.vue](file:///home/wira/tes/o/CateringKu/resources/js/pages/Vendor/Dashboard.vue)
+
+Redesign jadi dashboard premium dengan:
+- **Welcome banner** bergradient dengan nama vendor dan rating bintang
+- **Stat cards** dengan ikon yang lebih besar, micro-animations, progress indicators
+- **Quick actions** (Tambah Menu, Lihat Pesanan, Respon Ulasan)
+- **Revenue mini chart** (visual bar chart dari 7 hari terakhir)
+- **Recent orders** list yang lebih informatif
+- **Latest reviews** section inline
+- **Link ke halaman utama** di navbar agar vendor bisa browsing website publik
+
+---
+
+### 4. Navbar Admin/Vendor — Tambah Link "Website"
+
+Setiap navbar di halaman Admin/Vendor pages perlu ditambah link ke halaman utama (`/`), agar admin/vendor tidak "terjebak" di panel manajemen.
+
+**Files yang perlu dimodifikasi (navbar):**
+- `Admin/Dashboard.vue`, `Admin/Orders.vue`, `Admin/Messages.vue`, `Admin/MessageDetail.vue`
+- `Vendor/Dashboard.vue`, `Vendor/Orders.vue`, `Vendor/Menu.vue`, `Vendor/Reviews.vue`
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Apakah desain dashboard ini sudah sesuai keinginan?** Saya akan menggunakan data yang sudah di-pass dari controller (stats, recentOrders, dll.) — tidak perlu perubahan backend, hanya frontend/UI.
+
+> [!NOTE]
+> Halaman `Dashboard.vue` (root, bukan Admin/Vendor) saat ini adalah placeholder bawaan Laravel yang redirect berdasarkan role. Ini bisa tetap dibiarkan karena route `/dashboard` sudah melakukan redirect ke `/admin` atau `/vendor-panel` sesuai role.
+
+## Verification Plan
+
+### Manual Verification
+1. Login sebagai **Admin** → cek dashboard baru, pastikan stat cards dan tabel muncul
+2. Login sebagai **Vendor** → cek dashboard baru, pastikan semua data vendor muncul
+3. Login sebagai **Customer** → pastikan tetap redirect ke `/orders`
+4. Dari dashboard Admin/Vendor, klik "Website" → harus buka halaman utama
+5. Pastikan **tidak ada sidebar** yang muncul di halaman Admin/Vendor
+6. Pastikan halaman utama bisa diakses oleh semua role (admin, vendor, customer, guest)

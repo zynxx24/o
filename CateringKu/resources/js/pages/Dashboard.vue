@@ -1,47 +1,27 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
-import { dashboard } from '@/routes';
+import { Head, usePage, router } from '@inertiajs/vue3'
+import { onMounted } from 'vue'
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-            },
-        ],
-    },
-});
+// This page should redirect based on user role
+// It's only reached if someone navigates directly to /dashboard
+onMounted(() => {
+    const user = usePage().props.auth?.user as any
+    if (user?.role === 'admin') {
+        router.visit('/admin')
+    } else if (user?.role === 'vendor') {
+        router.visit('/vendor-panel')
+    } else {
+        router.visit('/orders')
+    }
+})
 </script>
 
 <template>
-    <Head title="Dashboard" />
-
-    <div
-        class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
-    >
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-        </div>
-        <div
-            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
+    <Head title="Dashboard - CateringKu" />
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="w-10 h-10 border-4 border-ck-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-gray-500 text-sm">Mengalihkan ke dashboard...</p>
         </div>
     </div>
 </template>
