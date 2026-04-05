@@ -15,7 +15,6 @@
 /resources/js/wayfinder
 
 # ─── Environment ─────────────────────────────
-.env
 .env.backup
 .env.production
 .env.staging
