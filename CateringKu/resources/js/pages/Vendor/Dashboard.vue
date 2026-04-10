@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
 import { ref, onMounted, computed } from 'vue'
+import VendorLayout from '@/layouts/VendorLayout.vue'
 
 const props = defineProps<{ vendor: any, stats: any, recentOrders: any[] }>()
 
 function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p) }
 function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }) }
-function formatTime(d: string) { return new Date(d).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) }
 
 const statusColors: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700 border border-amber-200', confirmed: 'bg-sky-50 text-sky-700 border border-sky-200',
@@ -30,12 +30,6 @@ const today = computed(() => {
     return new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 })
 
-const ratingStars = computed(() => {
-    const r = Number(props.stats.avgRating) || 0
-    return { full: Math.floor(r), half: r % 1 >= 0.5, empty: 5 - Math.ceil(r) }
-})
-
-// Animated counter
 const animatedStats = ref({ totalOrders: 0, totalRevenue: 0, pendingOrders: 0, totalMenuItems: 0 })
 
 function animateNumber(key: string, target: number, duration = 1200) {
@@ -57,7 +51,6 @@ onMounted(() => {
     animateNumber('totalMenuItems', props.stats.totalMenuItems, 800)
 })
 
-// Revenue chart
 const chartBars = computed(() => {
     const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
     const now = new Date()
@@ -79,10 +72,10 @@ const chartBars = computed(() => {
 })
 
 const statCards = [
-    { key: 'totalOrders', label: 'Total Pesanan', icon: '📦', gradient: 'from-blue-500 via-blue-600 to-indigo-700', ring: 'ring-blue-100' },
-    { key: 'pendingOrders', label: 'Menunggu', icon: '⏳', gradient: 'from-amber-500 via-orange-500 to-red-500', ring: 'ring-amber-100' },
-    { key: 'totalRevenue', label: 'Pendapatan', icon: '💰', gradient: 'from-emerald-500 via-green-600 to-teal-700', ring: 'ring-emerald-100', isCurrency: true },
-    { key: 'totalMenuItems', label: 'Menu Aktif', icon: '🍽️', gradient: 'from-violet-500 via-purple-600 to-pink-600', ring: 'ring-violet-100' },
+    { key: 'totalOrders', label: 'Total Pesanan', icon: '📦', gradient: 'from-blue-500 via-blue-600 to-indigo-700', ring: 'ring-blue-100', iconBg: 'bg-blue-500/10' },
+    { key: 'pendingOrders', label: 'Menunggu', icon: '⏳', gradient: 'from-amber-500 via-orange-500 to-red-500', ring: 'ring-amber-100', iconBg: 'bg-amber-500/10' },
+    { key: 'totalRevenue', label: 'Pendapatan', icon: '💰', gradient: 'from-emerald-500 via-green-600 to-teal-700', ring: 'ring-emerald-100', iconBg: 'bg-emerald-500/10', isCurrency: true },
+    { key: 'totalMenuItems', label: 'Menu Aktif', icon: '🍽️', gradient: 'from-violet-500 via-purple-600 to-pink-600', ring: 'ring-violet-100', iconBg: 'bg-violet-500/10' },
 ]
 
 const quickActions = [
@@ -95,39 +88,26 @@ const quickActions = [
 
 <template>
     <Head title="Vendor Dashboard - CateringKu" />
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
-        <!-- Vendor Navbar -->
-        <nav class="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-100/80 sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-16 gap-4">
-                <Link href="/" class="flex items-center gap-2.5 group">
-                    <img src="/images/logo.svg" class="h-9 w-9 rounded-xl shadow-sm group-hover:shadow-md transition-shadow" />
-                    <span class="text-lg font-bold bg-gradient-to-r from-ck-primary to-orange-600 bg-clip-text text-transparent">CateringKu</span>
-                </Link>
-                <span class="px-2.5 py-1 bg-gradient-to-r from-ck-primary to-orange-500 text-white text-xs rounded-lg font-bold shadow-sm shadow-orange-200">VENDOR</span>
-                <div class="ml-auto flex items-center gap-1">
-                    <Link href="/" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">🌐 Website</Link>
-                    <Link href="/vendor-panel/orders" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Pesanan</Link>
-                    <Link href="/vendor-panel/menu" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Menu</Link>
-                    <Link href="/vendor-panel/reviews" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Ulasan</Link>
-                    <div class="w-px h-6 bg-gray-200 mx-2"></div>
-                    <Link href="/logout" method="post" as="button" class="px-3 py-2 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg font-medium transition-all">Keluar</Link>
-                </div>
+    <VendorLayout>
+        <template #header>
+            <div>
+                <h1 class="text-lg font-bold text-gray-900">Dashboard</h1>
+                <p class="text-xs text-gray-400 hidden sm:block">{{ today }}</p>
             </div>
-        </nav>
+        </template>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-6xl mx-auto space-y-6">
             <!-- Welcome Banner -->
-            <div class="relative overflow-hidden bg-gradient-to-r from-ck-primary via-orange-500 to-amber-500 rounded-3xl p-8 md:p-10 mb-8 shadow-xl shadow-orange-200/30 animate-fade-in">
+            <div class="relative overflow-hidden bg-gradient-to-r from-ck-primary via-orange-500 to-amber-500 rounded-2xl p-6 md:p-8 shadow-xl shadow-orange-200/30 animate-fade-in">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl"></div>
                 <div class="relative z-10">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <p class="text-orange-100 text-sm font-medium mb-1">{{ today }}</p>
-                            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                            <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
                                 {{ greeting }}, {{ vendor.vendor_name }}! 👋
                             </h1>
-                            <p class="text-orange-100 mt-2 text-sm">Kelola pesanan dan menu katering Anda dari sini.</p>
+                            <p class="text-orange-100 mt-1.5 text-sm">Kelola pesanan dan menu katering Anda dari sini.</p>
                         </div>
                         <div class="flex items-center gap-3 bg-white/15 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20">
                             <div class="text-2xl">⭐</div>
@@ -144,11 +124,11 @@ const quickActions = [
             </div>
 
             <!-- Stats Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div v-for="(card, index) in statCards" :key="card.key"
                      class="group relative bg-white rounded-2xl border border-gray-100/80 p-5 hover:shadow-xl hover:shadow-gray-100/50 hover:-translate-y-1 transition-all duration-300">
                     <div class="flex items-start justify-between mb-3">
-                        <div :class="`w-12 h-12 bg-gradient-to-br ${card.gradient} rounded-xl flex items-center justify-center text-white text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`">
+                        <div :class="`w-11 h-11 bg-gradient-to-br ${card.gradient} rounded-xl flex items-center justify-center text-white text-lg shadow-lg group-hover:scale-110 transition-transform duration-300`">
                             {{ card.icon }}
                         </div>
                         <div :class="`w-2 h-2 rounded-full bg-gradient-to-r ${card.gradient} animate-pulse`"></div>
@@ -162,7 +142,7 @@ const quickActions = [
             </div>
 
             <!-- Quick Actions -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <Link v-for="action in quickActions" :key="action.label" :href="action.href"
                       class="group flex items-center gap-3 bg-white rounded-2xl border border-gray-100/80 p-4 hover:shadow-lg hover:shadow-gray-100/50 hover:-translate-y-0.5 transition-all duration-200">
                     <div :class="`w-10 h-10 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-110 transition-transform`">
@@ -231,7 +211,7 @@ const quickActions = [
                 </div>
             </div>
         </div>
-    </div>
+    </VendorLayout>
 </template>
 
 <style scoped>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 
 const props = defineProps<{ message: any }>()
 
@@ -8,42 +9,35 @@ function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', 
 
 <template>
     <Head title="Detail Pesan - Admin CateringKu" />
-    <div class="min-h-screen bg-gray-50">
-        <nav class="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-100/80 sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-16 gap-4">
-                <Link href="/admin" class="flex items-center gap-2.5 group"><img src="/images/logo.svg" class="h-9 w-9 rounded-xl shadow-sm" /><span class="text-lg font-bold bg-gradient-to-r from-ck-primary to-orange-600 bg-clip-text text-transparent">CateringKu</span></Link>
-                <span class="px-2.5 py-1 bg-gradient-to-r from-red-500 to-rose-600 text-white text-xs rounded-lg font-bold shadow-sm shadow-red-200">ADMIN</span>
-                <div class="ml-auto flex items-center gap-1">
-                    <Link href="/" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">🌐 Website</Link>
-                    <Link href="/admin" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Dashboard</Link>
-                    <Link href="/admin/messages" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Pesan</Link>
-                    <div class="w-px h-6 bg-gray-200 mx-2"></div>
-                    <Link href="/logout" method="post" as="button" class="px-3 py-2 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg font-medium transition-all">Keluar</Link>
-                </div>
+    <AdminLayout>
+        <template #header>
+            <div class="flex items-center gap-3">
+                <Link href="/admin/messages" class="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </Link>
+                <h1 class="text-lg font-bold text-gray-900">Detail Pesan</h1>
             </div>
-        </nav>
+        </template>
 
-        <div class="max-w-3xl mx-auto px-4 py-8">
-            <Link href="/admin/messages" class="text-sm text-gray-500 hover:text-ck-primary mb-4 inline-flex items-center gap-1">← Kembali ke Pesan</Link>
-
-            <div class="bg-white rounded-2xl border border-gray-100 p-8 mt-4">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="w-14 h-14 bg-ck-primary/10 text-ck-primary rounded-full flex items-center justify-center font-bold text-xl">{{ message.name?.charAt(0) }}</div>
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl border border-gray-100/80 p-8 shadow-sm">
+                <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                    <div class="w-14 h-14 bg-gradient-to-br from-ck-primary/20 to-ck-coral/20 text-ck-primary rounded-2xl flex items-center justify-center font-bold text-xl">{{ message.name?.charAt(0) }}</div>
                     <div>
-                        <h1 class="font-bold text-xl text-gray-800">{{ message.name }}</h1>
+                        <h2 class="font-bold text-xl text-gray-900">{{ message.name }}</h2>
                         <p class="text-sm text-gray-500">{{ message.email }}</p>
                         <p class="text-xs text-gray-400 mt-0.5">{{ formatDate(message.created_at) }}</p>
                     </div>
                 </div>
                 <div class="mb-6">
-                    <p class="text-sm font-medium text-gray-500 mb-1">Subjek</p>
-                    <p class="font-semibold text-gray-800">{{ message.subject }}</p>
+                    <p class="text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Subjek</p>
+                    <p class="font-semibold text-gray-800 text-lg">{{ message.subject }}</p>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-2">Pesan</p>
-                    <div class="bg-gray-50 rounded-xl p-5 text-gray-700 leading-relaxed whitespace-pre-wrap">{{ message.message }}</div>
+                    <p class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Pesan</p>
+                    <div class="bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl p-6 text-gray-700 leading-relaxed whitespace-pre-wrap border border-gray-100/80">{{ message.message }}</div>
                 </div>
             </div>
         </div>
-    </div>
+    </AdminLayout>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { ref } from 'vue'
+import VendorLayout from '@/layouts/VendorLayout.vue'
 
 const props = defineProps<{ menuItems: any[], categories: any[] }>()
 
@@ -38,75 +39,134 @@ function deleteItem(id: number) {
 
 <template>
     <Head title="Menu - Vendor CateringKu" />
-    <div class="min-h-screen bg-gray-50">
-        <nav class="bg-white/80 backdrop-blur-xl shadow-sm border-b border-gray-100/80 sticky top-0 z-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-16 gap-4">
-                <Link href="/vendor-panel" class="flex items-center gap-2.5 group"><img src="/images/logo.svg" class="h-9 w-9 rounded-xl shadow-sm" /><span class="text-lg font-bold bg-gradient-to-r from-ck-primary to-orange-600 bg-clip-text text-transparent">CateringKu</span></Link>
-                <span class="px-2.5 py-1 bg-gradient-to-r from-ck-primary to-orange-500 text-white text-xs rounded-lg font-bold shadow-sm shadow-orange-200">VENDOR</span>
-                <div class="ml-auto flex items-center gap-1">
-                    <Link href="/" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">🌐 Website</Link>
-                    <Link href="/vendor-panel" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Dashboard</Link>
-                    <Link href="/vendor-panel/orders" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Pesanan</Link>
-                    <Link href="/vendor-panel/reviews" class="px-3 py-2 text-sm text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg font-medium transition-all">Ulasan</Link>
-                    <div class="w-px h-6 bg-gray-200 mx-2"></div>
-                    <Link href="/logout" method="post" as="button" class="px-3 py-2 text-sm text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg font-medium transition-all">Keluar</Link>
-                </div>
-            </div>
-        </nav>
+    <VendorLayout>
+        <template #header>
+            <h1 class="text-lg font-bold text-gray-900">Kelola Menu</h1>
+        </template>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
             <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">🍽️ Kelola Menu</h1>
-                <button @click="showAddForm = !showAddForm" class="btn-primary text-sm !py-2.5">+ Tambah Menu</button>
+                <div>
+                    <p class="text-sm text-gray-500">{{ menuItems.length }} item menu terdaftar</p>
+                </div>
+                <button @click="showAddForm = !showAddForm" :class="showAddForm ? 'bg-gray-100 text-gray-700' : 'btn-primary'" class="text-sm !py-2.5 px-5 rounded-xl font-semibold transition-all flex items-center gap-2">
+                    <svg v-if="!showAddForm" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    {{ showAddForm ? 'Tutup Form' : 'Tambah Menu' }}
+                </button>
             </div>
 
             <!-- Add Form -->
-            <div v-if="showAddForm" class="bg-white rounded-2xl border border-gray-100 p-6 mb-6">
-                <h3 class="font-bold text-gray-800 mb-4">Tambah Menu Baru</h3>
-                <form @submit.prevent="submitAdd" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Nama Menu *</label><input v-model="addForm.item_name" required class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary" /></div>
-                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Harga *</label><input v-model.number="addForm.price" type="number" required min="0" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary" /></div>
-                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Kategori</label><select v-model="addForm.category_id" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm"><option value="">-</option><option v-for="c in categories" :key="c.category_id" :value="c.category_id">{{ c.category_name }}</option></select></div>
-                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Satuan</label><input v-model="addForm.unit" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
-                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Min. Order</label><input v-model.number="addForm.min_order" type="number" min="1" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm" /></div>
-                    <div class="flex items-end"><button type="submit" :disabled="addForm.processing" class="btn-primary text-sm !py-2.5 w-full">Simpan</button></div>
-                    <div class="md:col-span-3"><label class="block text-xs font-medium text-gray-600 mb-1">Deskripsi</label><textarea v-model="addForm.description" rows="2" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm"></textarea></div>
-                </form>
-            </div>
+            <Transition
+                enter-active-class="transition-all duration-300 ease-out"
+                enter-from-class="opacity-0 -translate-y-2 scale-[0.98]"
+                enter-to-class="opacity-100 translate-y-0 scale-100"
+                leave-active-class="transition-all duration-200 ease-in"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 -translate-y-2"
+            >
+                <div v-if="showAddForm" class="bg-white rounded-2xl border border-gray-100/80 p-6 mb-6 shadow-sm">
+                    <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center text-white text-sm">+</span>
+                        Tambah Menu Baru
+                    </h3>
+                    <form @submit.prevent="submitAdd" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Nama Menu *</label>
+                            <input v-model="addForm.item_name" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" placeholder="Mis: Nasi Goreng Spesial" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Harga *</label>
+                            <input v-model.number="addForm.price" type="number" required min="0" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" placeholder="25000" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Kategori</label>
+                            <select v-model="addForm.category_id" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all">
+                                <option value="">Pilih kategori</option>
+                                <option v-for="c in categories" :key="c.category_id" :value="c.category_id">{{ c.category_name }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Satuan</label>
+                            <input v-model="addForm.unit" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" placeholder="porsi" />
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Min. Order</label>
+                            <input v-model.number="addForm.min_order" type="number" min="1" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" />
+                        </div>
+                        <div class="flex items-end">
+                            <button type="submit" :disabled="addForm.processing" class="btn-primary text-sm !py-2.5 w-full flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Simpan
+                            </button>
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Deskripsi</label>
+                            <textarea v-model="addForm.description" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" placeholder="Deskripsi menu..."></textarea>
+                        </div>
+                    </form>
+                </div>
+            </Transition>
 
             <!-- Menu List -->
-            <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            <div class="bg-white rounded-2xl border border-gray-100/80 overflow-hidden shadow-sm">
                 <div class="divide-y divide-gray-50">
-                    <div v-for="item in menuItems" :key="item.item_id" class="p-5">
+                    <div v-for="item in menuItems" :key="item.item_id" class="p-5 hover:bg-gray-50/50 transition-colors">
                         <template v-if="editingId === item.item_id">
                             <form @submit.prevent="submitEdit(item.item_id)" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                                <div><label class="block text-xs text-gray-500 mb-1">Nama</label><input v-model="editForm.item_name" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" /></div>
-                                <div><label class="block text-xs text-gray-500 mb-1">Harga</label><input v-model.number="editForm.price" type="number" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm" /></div>
-                                <div><label class="block text-xs text-gray-500 mb-1">Status</label><select v-model="editForm.is_available" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"><option :value="true">Tersedia</option><option :value="false">Habis</option></select></div>
-                                <div class="flex gap-2"><button type="submit" class="bg-ck-primary text-white px-4 py-2 rounded-lg text-sm font-medium">Simpan</button><button type="button" @click="editingId = null" class="text-gray-500 px-3 py-2 text-sm">Batal</button></div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1 font-medium">Nama</label>
+                                    <input v-model="editForm.item_name" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1 font-medium">Harga</label>
+                                    <input v-model.number="editForm.price" type="number" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1 font-medium">Status</label>
+                                    <select v-model="editForm.is_available" class="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-ck-primary/30 focus:border-ck-primary transition-all">
+                                        <option :value="true">Tersedia</option>
+                                        <option :value="false">Habis</option>
+                                    </select>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="submit" class="bg-ck-primary hover:bg-ck-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        Simpan
+                                    </button>
+                                    <button type="button" @click="editingId = null" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm hover:bg-gray-100 rounded-lg transition-colors">Batal</button>
+                                </div>
                             </form>
                         </template>
                         <template v-else>
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-14 h-14 bg-ck-primary-light rounded-xl flex items-center justify-center text-2xl shrink-0">🍽️</div>
+                                    <div class="w-12 h-12 bg-gradient-to-br from-ck-primary-lighter to-ck-primary-light rounded-xl flex items-center justify-center text-xl shrink-0">🍽️</div>
                                     <div>
-                                        <h4 class="font-medium text-gray-800">{{ item.item_name }}</h4>
-                                        <p class="text-sm text-gray-400">{{ item.category?.category_name || '-' }} • {{ item.unit }}</p>
+                                        <h4 class="font-semibold text-gray-800">{{ item.item_name }}</h4>
+                                        <p class="text-sm text-gray-400">{{ item.category?.category_name || '-' }} • {{ item.unit }} • Min. {{ item.min_order }}</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-4">
-                                    <span class="font-bold text-ck-primary">{{ formatPrice(item.price) }}</span>
-                                    <span class="text-xs px-2 py-1 rounded-full" :class="item.is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">{{ item.is_available ? 'Tersedia' : 'Habis' }}</span>
-                                    <button @click="startEdit(item)" class="text-sm text-blue-500 hover:text-blue-700">Edit</button>
-                                    <button @click="deleteItem(item.item_id)" class="text-sm text-red-500 hover:text-red-700">Hapus</button>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-ck-primary text-sm">{{ formatPrice(item.price) }}</span>
+                                    <span class="text-xs px-2.5 py-1 rounded-lg font-semibold" :class="item.is_available ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'">{{ item.is_available ? 'Tersedia' : 'Habis' }}</span>
+                                    <button @click="startEdit(item)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button @click="deleteItem(item.item_id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
                                 </div>
                             </div>
                         </template>
                     </div>
                 </div>
-                <div v-if="menuItems.length === 0" class="p-10 text-center text-gray-500">Belum ada menu. Klik "Tambah Menu" untuk mulai.</div>
+                <div v-if="menuItems.length === 0" class="p-12 text-center">
+                    <div class="w-16 h-16 mx-auto bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl flex items-center justify-center mb-4 text-3xl">🍽️</div>
+                    <h3 class="font-bold text-gray-800 mb-1">Belum Ada Menu</h3>
+                    <p class="text-gray-500 text-sm">Klik "Tambah Menu" untuk mulai menambahkan menu katering Anda.</p>
+                </div>
             </div>
         </div>
-    </div>
+    </VendorLayout>
 </template>

@@ -17,7 +17,7 @@ class ProfileController extends Controller
             ->limit(5)
             ->get(['order_id', 'order_number', 'status', 'total_amount', 'created_at']);
 
-        $reviews = Review::where('user_id', $user->id)
+        $reviews = Review::where('reviews.user_id', $user->id)
             ->join('vendors', 'reviews.vendor_id', '=', 'vendors.vendor_id')
             ->orderByDesc('reviews.created_at')
             ->limit(5)
@@ -25,7 +25,7 @@ class ProfileController extends Controller
                 'reviews.review_id',
                 'vendors.vendor_name',
                 'reviews.rating',
-                'reviews.comment',
+                'reviews.review_text as comment',
                 'reviews.created_at',
             ]);
 

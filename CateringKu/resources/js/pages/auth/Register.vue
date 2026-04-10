@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useForm, Link, Head } from '@inertiajs/vue3'
 
+defineOptions({ layout: null as any })
+
 const form = useForm({
     name: '', username: '', email: '', password: '', password_confirmation: '',
 })

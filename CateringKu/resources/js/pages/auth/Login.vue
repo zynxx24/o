@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useForm, Link, Head } from '@inertiajs/vue3'
 
+defineOptions({ layout: null as any })
+
 const form = useForm({ email: '', password: '', remember: false })
 
 function submit() {
@@ -10,7 +12,7 @@ function submit() {
 
 <template>
     <Head title="Masuk - CateringKu" />
-    <div class="min-h-screen flex">
+    <div class="min-h-screen flex bg-white">
         <!-- Left - Branding -->
         <div class="hidden lg:flex lg:w-1/2 gradient-hero items-center justify-center relative overflow-hidden">
             <div class="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full -mr-24 -mt-24 animate-float"></div>
@@ -23,7 +25,7 @@ function submit() {
         </div>
 
         <!-- Right - Form -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
             <div class="w-full max-w-md">
                 <div class="lg:hidden flex items-center gap-2 mb-8 justify-center">
                     <img src="/images/logo.svg" alt="CateringKu" class="h-12 w-12 rounded-xl" />
