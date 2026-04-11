@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3'
-import { ref, onMounted, computed } from 'vue'
+import { Head, Link, router } from '@inertiajs/vue3'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import VendorLayout from '@/layouts/VendorLayout.vue'
 
 const props = defineProps<{ vendor: any, stats: any, recentOrders: any[] }>()
@@ -51,6 +51,17 @@ onMounted(() => {
     animateNumber('totalMenuItems', props.stats.totalMenuItems, 800)
 })
 
+// Auto-fetch polling every 30 seconds
+let pollInterval: ReturnType<typeof setInterval> | null = null
+onMounted(() => {
+    pollInterval = setInterval(() => {
+        router.reload({ only: ['stats', 'recentOrders'] })
+    }, 30000)
+})
+onUnmounted(() => {
+    if (pollInterval) clearInterval(pollInterval)
+})
+
 const chartBars = computed(() => {
     const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
     const now = new Date()
@@ -91,14 +102,14 @@ const quickActions = [
     <VendorLayout>
         <template #header>
             <div>
-                <h1 class="text-lg font-bold text-gray-900">Dashboard</h1>
-                <p class="text-xs text-gray-400 hidden sm:block">{{ today }}</p>
+                <h1 class="text-lg font-bold text-gray-900 dark:text-gray-100">Dashboard</h1>
+                <p class="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">{{ today }}</p>
             </div>
         </template>
 
         <div class="max-w-6xl mx-auto space-y-6">
             <!-- Welcome Banner -->
-            <div class="relative overflow-hidden bg-gradient-to-r from-ck-primary via-orange-500 to-amber-500 rounded-2xl p-6 md:p-8 shadow-xl shadow-orange-200/30 animate-fade-in">
+            <div class="relative overflow-hidden bg-gradient-to-r from-ck-primary via-orange-500 to-amber-500 rounded-2xl p-6 md:p-8 shadow-xl shadow-orange-200/30 dark:shadow-orange-900/20 animate-fade-in">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl"></div>
                 <div class="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4 blur-2xl"></div>
                 <div class="relative z-10">
@@ -126,17 +137,17 @@ const quickActions = [
             <!-- Stats Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div v-for="(card, index) in statCards" :key="card.key"
-                     class="group relative bg-white rounded-2xl border border-gray-100/80 p-5 hover:shadow-xl hover:shadow-gray-100/50 hover:-translate-y-1 transition-all duration-300">
+                     class="group relative bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] p-5 hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-black/20 hover:-translate-y-1 transition-all duration-300">
                     <div class="flex items-start justify-between mb-3">
                         <div :class="`w-11 h-11 bg-gradient-to-br ${card.gradient} rounded-xl flex items-center justify-center text-white text-lg shadow-lg group-hover:scale-110 transition-transform duration-300`">
                             {{ card.icon }}
                         </div>
                         <div :class="`w-2 h-2 rounded-full bg-gradient-to-r ${card.gradient} animate-pulse`"></div>
                     </div>
-                    <p class="text-2xl font-extrabold text-gray-900 tracking-tight">
+                    <p class="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
                         {{ card.isCurrency ? formatPrice(animatedStats[card.key as keyof typeof animatedStats]) : animatedStats[card.key as keyof typeof animatedStats] }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-1 font-medium">{{ card.label }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">{{ card.label }}</p>
                     <div :class="`absolute inset-0 rounded-2xl ring-2 ${card.ring} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none`"></div>
                 </div>
             </div>
@@ -144,22 +155,22 @@ const quickActions = [
             <!-- Quick Actions -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <Link v-for="action in quickActions" :key="action.label" :href="action.href"
-                      class="group flex items-center gap-3 bg-white rounded-2xl border border-gray-100/80 p-4 hover:shadow-lg hover:shadow-gray-100/50 hover:-translate-y-0.5 transition-all duration-200">
+                      class="group flex items-center gap-3 bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] p-4 hover:shadow-lg hover:shadow-gray-100/50 dark:hover:shadow-black/20 hover:-translate-y-0.5 transition-all duration-200">
                     <div :class="`w-10 h-10 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-110 transition-transform`">
                         {{ action.icon }}
                     </div>
-                    <p class="text-sm font-semibold text-gray-800">{{ action.label }}</p>
+                    <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ action.label }}</p>
                     <svg class="w-4 h-4 text-gray-300 group-hover:text-ck-primary ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                 </Link>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Revenue Chart -->
-                <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100/80 p-6">
+                <div class="lg:col-span-2 bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] p-6">
                     <div class="flex items-center justify-between mb-6">
                         <div>
-                            <h3 class="font-bold text-gray-900 text-lg">Pendapatan Mingguan</h3>
-                            <p class="text-sm text-gray-400 mt-0.5">Berdasarkan pesanan terbaru</p>
+                            <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg">Pendapatan Mingguan</h3>
+                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Berdasarkan pesanan terbaru</p>
                         </div>
                         <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100">
                             {{ formatPrice(stats.totalRevenue) }}
@@ -172,7 +183,7 @@ const quickActions = [
                                     'w-full max-w-[44px] rounded-xl transition-all duration-700 ease-out',
                                     bar.isToday 
                                         ? 'bg-gradient-to-t from-ck-primary to-orange-400 shadow-lg shadow-orange-200/50'
-                                        : 'bg-gradient-to-t from-gray-200 to-gray-100 hover:from-ck-primary/60 hover:to-orange-300/60'
+                                        : 'bg-gradient-to-t from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-ck-primary/60 hover:to-orange-300/60'
                                 ]"
                                 :style="{ height: `${bar.height}%` }">
                                 </div>
@@ -183,27 +194,27 @@ const quickActions = [
                 </div>
 
                 <!-- Recent Orders List -->
-                <div class="bg-white rounded-2xl border border-gray-100/80 overflow-hidden">
-                    <div class="px-5 py-4 border-b border-gray-100/80 flex justify-between items-center">
-                        <h3 class="font-bold text-gray-900">Pesanan Terbaru</h3>
+                <div class="bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-100/80 dark:border-[#2a2c45] flex justify-between items-center">
+                        <h3 class="font-bold text-gray-900 dark:text-gray-100">Pesanan Terbaru</h3>
                         <Link href="/vendor-panel/orders" class="text-xs text-ck-primary font-semibold hover:text-ck-primary-dark transition-colors">Semua →</Link>
                     </div>
                     <div v-if="recentOrders.length === 0" class="p-8 text-center text-gray-400 text-sm">Belum ada pesanan.</div>
                     <div v-else class="divide-y divide-gray-50">
-                        <div v-for="order in recentOrders" :key="order.order_id" class="px-5 py-4 hover:bg-gradient-to-r hover:from-ck-primary/[0.02] hover:to-transparent transition-colors group">
+                        <div v-for="order in recentOrders" :key="order.order_id" class="px-5 py-4 hover:bg-gradient-to-r hover:from-ck-primary/[0.02] dark:hover:from-ck-primary/[0.05] hover:to-transparent transition-colors group">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <div class="w-9 h-9 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-xs font-bold text-gray-600 shrink-0">
                                         {{ order.user?.name?.charAt(0) }}
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="font-medium text-gray-800 text-sm truncate">{{ order.user?.name }}</p>
-                                        <p class="text-xs text-gray-400">{{ formatDate(order.event_date) }} · {{ order.num_people }} pax</p>
+                                        <p class="font-medium text-gray-800 dark:text-gray-200 text-sm truncate">{{ order.user?.name }}</p>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500">{{ formatDate(order.event_date) }} · {{ order.num_people }} pax</p>
                                     </div>
                                 </div>
                                 <div class="text-right shrink-0 ml-3">
                                     <span :class="statusColors[order.status]" class="px-2 py-0.5 rounded-md text-[10px] font-bold">{{ statusLabels[order.status] }}</span>
-                                    <p class="text-sm font-bold text-gray-800 mt-1">{{ formatPrice(order.total_amount) }}</p>
+                                    <p class="text-sm font-bold text-gray-800 dark:text-gray-200 mt-1">{{ formatPrice(order.total_amount) }}</p>
                                 </div>
                             </div>
                         </div>

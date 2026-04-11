@@ -49,6 +49,7 @@ Route::middleware(ShareCartCount::class)->group(function () {
         // Orders
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{id}/receipt', [OrderController::class, 'receipt'])->name('orders.receipt');
         Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         Route::post('/orders/{id}/review', [OrderController::class, 'storeReview'])->name('orders.review');
 
@@ -75,6 +76,7 @@ Route::middleware(ShareCartCount::class)->group(function () {
     Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
+        Route::get('/orders/{id}', [AdminController::class, 'orderDetail'])->name('orders.show');
         Route::patch('/orders/{id}/status', [AdminController::class, 'updateOrderStatus'])->name('orders.status');
         Route::patch('/payments/{id}/verify', [AdminController::class, 'verifyPayment'])->name('payments.verify');
         Route::get('/messages', [AdminController::class, 'messages'])->name('messages');
@@ -89,6 +91,7 @@ Route::middleware(ShareCartCount::class)->group(function () {
     Route::middleware(['auth', EnsureUserIsVendor::class])->prefix('vendor-panel')->name('vendor.')->group(function () {
         Route::get('/', [VendorDashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/orders', [VendorDashboardController::class, 'orders'])->name('orders');
+        Route::get('/orders/{id}', [VendorDashboardController::class, 'orderDetail'])->name('orders.show');
         Route::patch('/orders/{id}/status', [VendorDashboardController::class, 'updateOrderStatus'])->name('orders.status');
         Route::get('/menu', [VendorDashboardController::class, 'menu'])->name('menu');
         Route::post('/menu', [VendorDashboardController::class, 'storeMenuItem'])->name('menu.store');

@@ -6,7 +6,6 @@ import { ref } from 'vue'
 const props = defineProps<{ vendor: any, reviews: any[], menuCategories: any[] }>()
 const page = usePage()
 const activeCategory = ref<number | null>(null)
-const quantity = ref(1)
 
 function filteredItems() {
     if (activeCategory.value === null) return props.vendor.menu_items
@@ -15,6 +14,11 @@ function filteredItems() {
 
 function formatPrice(p: number) {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p)
+}
+
+// Dummy food photos for items without images
+function foodPhoto(itemId: number) {
+    return `https://picsum.photos/seed/food${itemId}/400/300`
 }
 
 function addToCart(itemId: number) {
@@ -49,31 +53,30 @@ function addToCart(itemId: number) {
 
         <!-- Category Tabs -->
         <div class="flex overflow-x-auto gap-2 mb-6 pb-2">
-            <button @click="activeCategory = null" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors" :class="activeCategory === null ? 'bg-ck-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-ck-primary'">
+            <button @click="activeCategory = null" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors" :class="activeCategory === null ? 'bg-ck-primary text-white' : 'bg-[var(--ck-surface)] text-[var(--ck-text-secondary)] border border-[var(--ck-surface-border)] hover:border-ck-primary'">
                 Semua
             </button>
-            <button v-for="cat in menuCategories" :key="cat.category_id" @click="activeCategory = cat.category_id" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors" :class="activeCategory === cat.category_id ? 'bg-ck-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-ck-primary'">
+            <button v-for="cat in menuCategories" :key="cat.category_id" @click="activeCategory = cat.category_id" class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors" :class="activeCategory === cat.category_id ? 'bg-ck-primary text-white' : 'bg-[var(--ck-surface)] text-[var(--ck-text-secondary)] border border-[var(--ck-surface-border)] hover:border-ck-primary'">
                 {{ cat.category_name }}
             </button>
         </div>
 
         <!-- Menu Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            <div v-for="item in filteredItems()" :key="item.item_id" class="bg-white rounded-2xl border border-gray-100 overflow-hidden card-hover">
-                <div class="h-40 bg-gradient-to-br from-ck-primary-light to-orange-100 flex items-center justify-center">
-                    <img v-if="item.image_url" :src="item.image_url" :alt="item.item_name" class="w-full h-full object-cover" />
-                    <span v-else class="text-4xl">🍽️</span>
+            <div v-for="item in filteredItems()" :key="item.item_id" class="bg-[var(--ck-surface)] rounded-2xl border border-[var(--ck-surface-border)] overflow-hidden card-hover">
+                <div class="h-40 bg-gradient-to-br from-ck-primary-light to-orange-100 dark:from-ck-primary/10 dark:to-orange-900/10 flex items-center justify-center overflow-hidden">
+                    <img :src="item.image_url || foodPhoto(item.item_id)" :alt="item.item_name" class="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div class="p-5">
                     <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-bold text-gray-900">{{ item.item_name }}</h3>
+                        <h3 class="font-bold text-[var(--ck-text-primary)]">{{ item.item_name }}</h3>
                         <span v-if="item.category" class="text-xs bg-ck-primary/10 text-ck-primary px-2 py-0.5 rounded-full">{{ item.category.category_name }}</span>
                     </div>
-                    <p class="text-gray-500 text-sm mb-3 line-clamp-2">{{ item.description }}</p>
+                    <p class="text-[var(--ck-text-muted)] text-sm mb-3 line-clamp-2">{{ item.description }}</p>
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="text-lg font-bold text-ck-primary">{{ formatPrice(item.price) }}</span>
-                            <span class="text-xs text-gray-400 ml-1">/ {{ item.unit }}</span>
+                            <span class="text-xs text-[var(--ck-text-muted)] ml-1">/ {{ item.unit }}</span>
                         </div>
                         <button @click="addToCart(item.item_id)" class="bg-ck-primary hover:bg-ck-primary-dark text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -86,25 +89,25 @@ function addToCart(itemId: number) {
 
         <!-- Reviews -->
         <div v-if="reviews.length > 0" class="mb-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+            <h2 class="text-2xl font-bold text-[var(--ck-text-primary)] mb-6 flex items-center">
                 <span class="w-1 h-8 bg-gradient-to-b from-ck-primary to-ck-coral rounded-full mr-3"></span>
                 Ulasan Pelanggan
             </h2>
             <div class="space-y-4">
-                <div v-for="review in reviews" :key="review.review_id" class="bg-white rounded-xl p-5 border border-gray-100">
+                <div v-for="review in reviews" :key="review.review_id" class="bg-[var(--ck-surface)] rounded-xl p-5 border border-[var(--ck-surface-border)]">
                     <div class="flex items-center justify-between mb-3">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 bg-ck-primary/10 text-ck-primary rounded-full flex items-center justify-center font-bold text-sm">{{ review.user?.name?.charAt(0) }}</div>
                             <div>
-                                <p class="font-medium text-gray-800 text-sm">{{ review.user?.name }}</p>
+                                <p class="font-medium text-[var(--ck-text-primary)] text-sm">{{ review.user?.name }}</p>
                                 <div class="flex gap-0.5 mt-0.5">
-                                    <span v-for="i in 5" :key="i" class="text-sm" :class="i <= review.rating ? 'text-yellow-400' : 'text-gray-200'">★</span>
+                                    <span v-for="i in 5" :key="i" class="text-sm" :class="i <= review.rating ? 'text-yellow-400' : 'text-gray-200 dark:text-gray-700'">★</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <p v-if="review.review_text" class="text-gray-600 text-sm">{{ review.review_text }}</p>
-                    <div v-if="review.vendor_response" class="mt-3 pl-4 border-l-2 border-ck-primary/30 text-sm text-gray-500 italic">
+                    <p v-if="review.review_text" class="text-[var(--ck-text-secondary)] text-sm">{{ review.review_text }}</p>
+                    <div v-if="review.vendor_response" class="mt-3 pl-4 border-l-2 border-ck-primary/30 text-sm text-[var(--ck-text-muted)] italic">
                         <span class="font-medium text-ck-primary not-italic">Respon Vendor:</span> {{ review.vendor_response }}
                     </div>
                 </div>

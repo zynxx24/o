@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CateringLayout from '@/layouts/CateringLayout.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps<{
     vendors: { data: any[], links: any[] }
@@ -23,7 +23,7 @@ function applyFilters() {
 }
 
 function formatRating(r: number) { return Number(r).toFixed(1) }
-function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p) }
+function vendorPhoto(id: number) { return `https://picsum.photos/seed/vendor${id}/600/400` }
 </script>
 
 <template>
@@ -38,7 +38,7 @@ function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style:
                 <div class="flex gap-3 max-w-lg mx-auto">
                     <div class="flex-grow relative">
                         <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        <input v-model="search" @keyup.enter="applyFilters" type="text" placeholder="Cari vendor..." class="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 focus:ring-2 focus:ring-orange-300 focus:outline-none shadow-lg text-sm" />
+                        <input v-model="search" @keyup.enter="applyFilters" type="text" placeholder="Cari vendor..." class="w-full pl-12 pr-4 py-3.5 rounded-xl text-[var(--ck-text-primary)] bg-[var(--ck-surface)] focus:ring-2 focus:ring-orange-300 focus:outline-none shadow-lg text-sm" />
                     </div>
                     <button @click="applyFilters" class="bg-white text-ck-primary px-6 py-3.5 rounded-xl font-semibold hover:bg-orange-50 transition-all shadow-lg text-sm">Cari</button>
                 </div>
@@ -47,11 +47,11 @@ function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style:
 
         <!-- Filters -->
         <div class="flex flex-wrap gap-3 mb-8">
-            <select v-model="selectedCity" @change="applyFilters" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:ring-2 focus:ring-ck-primary focus:border-ck-primary bg-white">
+            <select v-model="selectedCity" @change="applyFilters" class="px-4 py-2.5 rounded-xl border border-[var(--ck-surface-border)] text-sm text-[var(--ck-text-secondary)] focus:ring-2 focus:ring-ck-primary focus:border-ck-primary bg-[var(--ck-surface)]">
                 <option value="">Semua Kota</option>
                 <option v-for="c in cities" :key="c" :value="c">{{ c }}</option>
             </select>
-            <select v-model="selectedSort" @change="applyFilters" class="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-700 focus:ring-2 focus:ring-ck-primary focus:border-ck-primary bg-white">
+            <select v-model="selectedSort" @change="applyFilters" class="px-4 py-2.5 rounded-xl border border-[var(--ck-surface-border)] text-sm text-[var(--ck-text-secondary)] focus:ring-2 focus:ring-ck-primary focus:border-ck-primary bg-[var(--ck-surface)]">
                 <option value="rating">Rating Tertinggi</option>
                 <option value="newest">Terbaru</option>
                 <option value="name">Nama A-Z</option>
@@ -59,10 +59,10 @@ function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style:
         </div>
 
         <!-- Results -->
-        <div v-if="vendors.data.length === 0" class="text-center py-16 bg-white rounded-2xl border border-gray-100">
+        <div v-if="vendors.data.length === 0" class="text-center py-16 bg-[var(--ck-surface)] rounded-2xl border border-[var(--ck-surface-border)]">
             <div class="text-5xl mb-4">😔</div>
-            <h3 class="text-xl font-bold text-gray-800 mb-2">Tidak Ditemukan</h3>
-            <p class="text-gray-500">Coba ubah kata kunci atau filter pencarian.</p>
+            <h3 class="text-xl font-bold text-[var(--ck-text-primary)] mb-2">Tidak Ditemukan</h3>
+            <p class="text-[var(--ck-text-muted)]">Coba ubah kata kunci atau filter pencarian.</p>
         </div>
 
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -70,19 +70,18 @@ function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style:
                 v-for="vendor in vendors.data"
                 :key="vendor.vendor_id"
                 :href="`/vendor/${vendor.vendor_id}`"
-                class="group block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 card-hover"
+                class="group block bg-[var(--ck-surface)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl dark:hover:shadow-ck-primary/5 transition-all border border-[var(--ck-surface-border)] card-hover"
             >
                 <div class="h-44 gradient-hero flex items-center justify-center text-white relative overflow-hidden">
-                    <img v-if="vendor.logo_url" :src="vendor.logo_url" :alt="vendor.vendor_name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <span v-else class="text-5xl font-bold opacity-20">{{ vendor.vendor_name.charAt(0) }}</span>
-                    <div class="absolute top-3 right-3 bg-white/90 glass px-2.5 py-1 rounded-full text-xs font-bold text-ck-primary shadow flex items-center gap-1">
+                    <img :src="vendor.logo_url || vendorPhoto(vendor.vendor_id)" :alt="vendor.vendor_name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div class="absolute top-3 right-3 bg-white/90 dark:bg-[var(--ck-surface)]/90 glass px-2.5 py-1 rounded-full text-xs font-bold text-ck-primary shadow flex items-center gap-1">
                         ⭐ {{ formatRating(vendor.rating) }}
                     </div>
                 </div>
                 <div class="p-5">
-                    <h3 class="font-bold text-gray-900 group-hover:text-ck-primary transition-colors mb-1.5">{{ vendor.vendor_name }}</h3>
-                    <p class="text-gray-500 text-sm line-clamp-2 mb-3">{{ vendor.description }}</p>
-                    <div class="flex items-center justify-between text-xs text-gray-400">
+                    <h3 class="font-bold text-[var(--ck-text-primary)] group-hover:text-ck-primary transition-colors mb-1.5">{{ vendor.vendor_name }}</h3>
+                    <p class="text-[var(--ck-text-muted)] text-sm line-clamp-2 mb-3">{{ vendor.description }}</p>
+                    <div class="flex items-center justify-between text-xs text-[var(--ck-text-muted)]">
                         <span class="flex items-center gap-1">📍 {{ vendor.city || 'Indonesia' }}</span>
                         <span>{{ vendor.total_reviews }} ulasan</span>
                     </div>
@@ -97,7 +96,7 @@ function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style:
                 :key="link.label"
                 :href="link.url || ''"
                 class="px-3 py-2 rounded-lg text-sm transition-colors"
-                :class="link.active ? 'bg-ck-primary text-white' : link.url ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 cursor-not-allowed'"
+                :class="link.active ? 'bg-ck-primary text-white' : link.url ? 'text-[var(--ck-text-secondary)] hover:bg-[var(--ck-surface)]' : 'text-[var(--ck-text-muted)] cursor-not-allowed'"
                 v-html="link.label"
             />
         </div>

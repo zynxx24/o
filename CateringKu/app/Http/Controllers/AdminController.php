@@ -63,6 +63,16 @@ class AdminController extends Controller
         return back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
+    public function orderDetail(int $id)
+    {
+        $order = Order::with(['user', 'vendor', 'items.menuItem', 'payments'])
+            ->findOrFail($id);
+
+        return Inertia::render('Admin/OrderDetail', [
+            'order' => $order,
+        ]);
+    }
+
     public function verifyPayment(Request $request, int $paymentId)
     {
         $payment = Payment::findOrFail($paymentId);

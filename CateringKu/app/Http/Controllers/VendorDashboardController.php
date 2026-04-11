@@ -66,6 +66,18 @@ class VendorDashboardController extends Controller
         return back()->with('success', 'Status pesanan diperbarui.');
     }
 
+    public function orderDetail(Request $request, int $id)
+    {
+        $vendor = $this->getVendor($request);
+        $order = $vendor->orders()
+            ->with(['user', 'items.menuItem', 'payments'])
+            ->findOrFail($id);
+
+        return Inertia::render('Vendor/OrderDetail', [
+            'order' => $order,
+        ]);
+    }
+
     public function menu(Request $request)
     {
         $vendor = $this->getVendor($request);

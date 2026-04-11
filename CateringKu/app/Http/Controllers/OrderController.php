@@ -33,6 +33,17 @@ class OrderController extends Controller
         ]);
     }
 
+    public function receipt(Request $request, int $id)
+    {
+        $order = Order::with(['user', 'vendor', 'items.menuItem', 'payments'])
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($id);
+
+        return Inertia::render('Orders/Receipt', [
+            'order' => $order,
+        ]);
+    }
+
     public function cancel(Request $request, int $id)
     {
         $order = Order::where('user_id', $request->user()->id)

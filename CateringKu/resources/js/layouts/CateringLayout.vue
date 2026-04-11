@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage, Head } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import DarkModeToggle from '@/components/DarkModeToggle.vue'
 
 const page = usePage()
 const user = computed(() => (page.props as any).auth?.user)
@@ -8,12 +9,6 @@ const cartCount = computed(() => (page.props as any).cartCount ?? 0)
 const mobileMenuOpen = ref(false)
 const userMenuOpen = ref(false)
 const scrolled = ref(false)
-
-// Force light mode for public catering pages
-onMounted(() => {
-    // Remove dark class from html element when on catering pages
-    // so the public layout always renders in light mode
-})
 
 const navLinks = [
     { name: 'Beranda', href: '/', routeName: 'home', icon: '🏠' },
@@ -52,17 +47,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <!-- 'light' class ensures this layout always renders in light mode regardless of user's dark mode preference -->
-    <div class="light min-h-screen flex flex-col" style="background: linear-gradient(to bottom, #f9fafb, #ffffff); color: #1f2937;">
+    <div class="min-h-screen flex flex-col bg-[var(--ck-body-bg)] text-[var(--ck-text-primary)] transition-colors duration-300">
         <!-- Navbar -->
         <nav
             :class="[
                 'sticky top-0 z-50 transition-all duration-300',
                 scrolled
-                    ? 'shadow-lg border-b border-gray-100'
-                    : 'border-b border-gray-100/50'
+                    ? 'shadow-lg dark:shadow-black/30'
+                    : ''
             ]"
-            style="background: white;"
+            class="bg-[var(--ck-nav-bg)] backdrop-blur-xl border-b border-[var(--ck-nav-border)]"
         >
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
@@ -89,7 +83,7 @@ onUnmounted(() => {
                             class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
                             :class="isActive(link)
                                 ? 'text-ck-primary bg-ck-primary/8 shadow-sm shadow-ck-primary/10'
-                                : 'text-gray-600 hover:text-ck-primary hover:bg-ck-primary/5'"
+                                : 'text-[var(--ck-text-secondary)] hover:text-ck-primary hover:bg-ck-primary/5'"
                         >
                             {{ link.name }}
                         </Link>
@@ -97,11 +91,14 @@ onUnmounted(() => {
 
                     <!-- Right side -->
                     <div class="flex items-center gap-2">
+                        <!-- Dark Mode Toggle -->
+                        <DarkModeToggle variant="icon" size="sm" />
+
                         <!-- Cart -->
                         <Link
                             v-if="user"
                             href="/cart"
-                            class="relative p-2.5 text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-xl transition-all"
+                            class="relative p-2.5 text-[var(--ck-text-muted)] hover:text-ck-primary hover:bg-ck-primary/5 rounded-xl transition-all"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -119,13 +116,13 @@ onUnmounted(() => {
                             <div class="relative user-menu-container">
                                 <button
                                     @click="userMenuOpen = !userMenuOpen"
-                                    class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-50 transition-all"
+                                    class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-[var(--ck-surface-border)] transition-all"
                                 >
                                     <div class="w-8 h-8 bg-gradient-to-br from-ck-primary to-ck-coral text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-sm">
                                         {{ user.name?.charAt(0).toUpperCase() }}
                                     </div>
-                                    <span class="hidden sm:block text-sm font-medium text-gray-700 max-w-[100px] truncate">{{ user.name }}</span>
-                                    <svg :class="['w-3.5 h-3.5 text-gray-400 transition-transform', userMenuOpen && 'rotate-180']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                    <span class="hidden sm:block text-sm font-medium text-[var(--ck-text-primary)] max-w-[100px] truncate">{{ user.name }}</span>
+                                    <svg :class="['w-3.5 h-3.5 text-[var(--ck-text-muted)] transition-transform', userMenuOpen && 'rotate-180']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                                 </button>
 
                                 <Transition
@@ -138,26 +135,26 @@ onUnmounted(() => {
                                 >
                                     <div
                                         v-if="userMenuOpen"
-                                        class="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl shadow-black/10 border border-gray-100 py-2 z-50 overflow-hidden"
+                                        class="absolute right-0 mt-2 w-52 bg-[var(--ck-surface)] rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/40 border border-[var(--ck-surface-border)] py-2 z-50 overflow-hidden"
                                     >
-                                        <div class="px-4 py-2 border-b border-gray-100 mb-1">
-                                            <p class="text-sm font-semibold text-gray-900 truncate">{{ user.name }}</p>
-                                            <p class="text-xs text-gray-400 capitalize">{{ user.role || 'customer' }}</p>
+                                        <div class="px-4 py-2 border-b border-[var(--ck-surface-border)] mb-1">
+                                            <p class="text-sm font-semibold text-[var(--ck-text-primary)] truncate">{{ user.name }}</p>
+                                            <p class="text-xs text-[var(--ck-text-muted)] capitalize">{{ user.role || 'customer' }}</p>
                                         </div>
-                                        <Link @click="closeMenus" href="/orders" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
+                                        <Link @click="closeMenus" href="/orders" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">📦</span> Pesanan Saya
                                         </Link>
-                                        <Link @click="closeMenus" href="/profile" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
+                                        <Link @click="closeMenus" href="/profile" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">👤</span> Profil
                                         </Link>
-                                        <Link @click="closeMenus" href="/dashboard" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
+                                        <Link @click="closeMenus" href="/dashboard" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">📊</span> Dashboard
                                         </Link>
-                                        <Link @click="closeMenus" href="/settings/profile" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
+                                        <Link @click="closeMenus" href="/settings/profile" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">⚙️</span> Pengaturan
                                         </Link>
-                                        <hr class="my-1 border-gray-100">
-                                        <Link @click="closeMenus" href="/logout" method="post" as="button" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                        <hr class="my-1 border-[var(--ck-surface-border)]">
+                                        <Link @click="closeMenus" href="/logout" method="post" as="button" class="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
                                             <span class="text-base">🚪</span> Keluar
                                         </Link>
                                     </div>
@@ -165,7 +162,7 @@ onUnmounted(() => {
                             </div>
                         </template>
                         <template v-else>
-                            <Link href="/login" class="text-sm font-medium text-gray-600 hover:text-ck-primary transition-colors px-3 py-2">
+                            <Link href="/login" class="text-sm font-medium text-[var(--ck-text-secondary)] hover:text-ck-primary transition-colors px-3 py-2">
                                 Masuk
                             </Link>
                             <Link href="/register" class="text-sm font-semibold text-white bg-gradient-to-r from-ck-primary to-ck-coral hover:shadow-lg hover:shadow-ck-primary/25 px-5 py-2.5 rounded-xl transition-all hover:-translate-y-0.5">
@@ -174,7 +171,7 @@ onUnmounted(() => {
                         </template>
 
                         <!-- Mobile menu button -->
-                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-gray-500 hover:text-ck-primary rounded-xl hover:bg-gray-50 transition-colors">
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-[var(--ck-text-muted)] hover:text-ck-primary rounded-xl hover:bg-ck-primary/5 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path v-if="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                                 <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -190,7 +187,7 @@ onUnmounted(() => {
                     leave-active-class="transition duration-150 ease-in"
                     leave-to-class="opacity-0 -translate-y-2"
                 >
-                    <div v-if="mobileMenuOpen" class="md:hidden py-3 space-y-1 border-t border-gray-100">
+                    <div v-if="mobileMenuOpen" class="md:hidden py-3 space-y-1 border-t border-[var(--ck-nav-border)]">
                         <Link
                             v-for="link in navLinks"
                             :key="link.routeName"
@@ -200,7 +197,7 @@ onUnmounted(() => {
                                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                                 isActive(link)
                                     ? 'text-ck-primary bg-ck-primary/5'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-ck-primary'
+                                    : 'text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary'
                             ]"
                         >
                             <span>{{ link.icon }}</span>
@@ -221,16 +218,16 @@ onUnmounted(() => {
             <div v-if="($page.props as any).flash?.success || ($page.props as any).flash?.error" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
                 <div
                     v-if="($page.props as any).flash?.success"
-                    class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-700 text-sm flex items-center gap-3 shadow-sm"
+                    class="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-emerald-700 dark:text-emerald-300 text-sm flex items-center gap-3 shadow-sm"
                 >
-                    <span class="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">✓</span>
+                    <span class="w-8 h-8 bg-emerald-100 dark:bg-emerald-800/40 rounded-xl flex items-center justify-center shrink-0">✓</span>
                     {{ ($page.props as any).flash.success }}
                 </div>
                 <div
                     v-if="($page.props as any).flash?.error"
-                    class="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 text-sm flex items-center gap-3 shadow-sm"
+                    class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl text-red-700 dark:text-red-300 text-sm flex items-center gap-3 shadow-sm"
                 >
-                    <span class="w-8 h-8 bg-red-100 rounded-xl flex items-center justify-center shrink-0">✕</span>
+                    <span class="w-8 h-8 bg-red-100 dark:bg-red-800/40 rounded-xl flex items-center justify-center shrink-0">✕</span>
                     {{ ($page.props as any).flash.error }}
                 </div>
             </div>
@@ -242,7 +239,7 @@ onUnmounted(() => {
         </main>
 
         <!-- Footer -->
-        <footer class="bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 text-gray-300 mt-auto">
+        <footer class="bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 dark:from-[#0f0f1a] dark:via-[#0c0c17] dark:to-[#080812] text-gray-300 mt-auto">
             <!-- CTA Section -->
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="relative -top-8">
@@ -310,14 +307,12 @@ onUnmounted(() => {
                             Platform pemesanan katering online terlengkap di Indonesia.
                             Temukan vendor terpercaya untuk segala acara Anda — dari prasmanan, nasi kotak, hingga snack box.
                         </p>
-                        <!-- Hashtags -->
                         <div class="flex flex-wrap gap-2 mb-5">
-                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full hover:bg-ck-primary/25 transition-colors cursor-default">#CateringKu</span>
-                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full hover:bg-ck-primary/25 transition-colors cursor-default">#KateringOnline</span>
-                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full hover:bg-ck-primary/25 transition-colors cursor-default">#PesanKatering</span>
-                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full hover:bg-ck-primary/25 transition-colors cursor-default">#NasiKotak</span>
+                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full">#CateringKu</span>
+                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full">#KateringOnline</span>
+                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full">#PesanKatering</span>
+                            <span class="text-xs font-medium bg-ck-primary/15 text-ck-primary px-3 py-1.5 rounded-full">#NasiKotak</span>
                         </div>
-                        <!-- Social Media -->
                         <div class="flex gap-3">
                             <a href="#" class="w-9 h-9 bg-gray-800 hover:bg-ck-primary rounded-xl flex items-center justify-center text-gray-400 hover:text-white transition-all text-sm" aria-label="Twitter">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
@@ -362,31 +357,19 @@ onUnmounted(() => {
                         <div class="space-y-3 text-sm text-gray-400">
                             <div class="flex items-start gap-3">
                                 <span class="text-base mt-0.5">📧</span>
-                                <div>
-                                    <p class="text-gray-300 font-medium">Email</p>
-                                    <p>info@cateringku.com</p>
-                                </div>
+                                <div><p class="text-gray-300 font-medium">Email</p><p>info@cateringku.com</p></div>
                             </div>
                             <div class="flex items-start gap-3">
                                 <span class="text-base mt-0.5">📞</span>
-                                <div>
-                                    <p class="text-gray-300 font-medium">Telepon</p>
-                                    <p>(021) 1234-5678</p>
-                                </div>
+                                <div><p class="text-gray-300 font-medium">Telepon</p><p>(021) 1234-5678</p></div>
                             </div>
                             <div class="flex items-start gap-3">
                                 <span class="text-base mt-0.5">📍</span>
-                                <div>
-                                    <p class="text-gray-300 font-medium">Lokasi</p>
-                                    <p>Jakarta, Indonesia</p>
-                                </div>
+                                <div><p class="text-gray-300 font-medium">Lokasi</p><p>Jakarta, Indonesia</p></div>
                             </div>
                             <div class="flex items-start gap-3">
                                 <span class="text-base mt-0.5">🕐</span>
-                                <div>
-                                    <p class="text-gray-300 font-medium">Jam Operasional</p>
-                                    <p>Senin — Sabtu, 08:00 — 17:00</p>
-                                </div>
+                                <div><p class="text-gray-300 font-medium">Jam Operasional</p><p>Senin — Sabtu, 08:00 — 17:00</p></div>
                             </div>
                         </div>
                     </div>
@@ -410,4 +393,3 @@ onUnmounted(() => {
         </footer>
     </div>
 </template>
-

@@ -11,7 +11,7 @@ class Payment extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'order_id', 'payment_method', 'amount', 'payment_date',
+        'order_id', 'payment_method', 'payment_provider', 'amount', 'payment_date',
         'payment_proof', 'payment_status', 'verified_by', 'verified_at', 'notes',
     ];
 

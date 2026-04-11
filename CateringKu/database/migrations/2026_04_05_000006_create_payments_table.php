@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id('payment_id');
             $table->unsignedBigInteger('order_id');
-            $table->enum('payment_method', ['transfer', 'credit_card', 'e-wallet', 'cash', 'cod']);
+            $table->string('payment_method', 50);
             $table->decimal('amount', 12, 2);
             $table->timestamp('payment_date')->useCurrent();
             $table->string('payment_proof', 255)->nullable();

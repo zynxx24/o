@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import DarkModeToggle from '@/components/DarkModeToggle.vue'
 
 const page = usePage()
 const user = computed(() => (page.props as any).auth?.user)
@@ -50,7 +51,7 @@ function toggleSidebar() {
 </script>
 
 <template>
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 flex">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 dark:from-[#13132a] dark:via-[#111128] dark:to-[#0f0f22] flex transition-colors duration-300">
         <!-- Mobile overlay -->
         <Transition
             enter-active-class="transition-opacity duration-300"
@@ -178,9 +179,9 @@ function toggleSidebar() {
         <!-- Main content area -->
         <div class="flex-1 flex flex-col min-w-0">
             <!-- Top bar -->
-            <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100/80 h-16 flex items-center px-4 sm:px-6 lg:px-8 gap-4">
+            <header class="sticky top-0 z-30 bg-white/80 dark:bg-[#1a1b2e]/80 backdrop-blur-xl border-b border-gray-100/80 dark:border-[#2a2c45] h-16 flex items-center px-4 sm:px-6 lg:px-8 gap-4">
                 <!-- Mobile menu toggle -->
-                <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors">
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path v-if="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                         <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -188,7 +189,7 @@ function toggleSidebar() {
                 </button>
 
                 <!-- Sidebar toggle (desktop) -->
-                <button @click="toggleSidebar" class="hidden lg:flex p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors">
+                <button @click="toggleSidebar" class="hidden lg:flex p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-xl transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 6h16M4 12h8m-8 6h16"/>
                     </svg>
@@ -201,7 +202,8 @@ function toggleSidebar() {
 
                 <!-- Right side actions -->
                 <div class="flex items-center gap-2">
-                    <Link href="/" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg transition-all">
+                    <DarkModeToggle variant="icon" size="sm" />
+                    <Link href="/" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-ck-primary hover:bg-ck-primary/5 rounded-lg transition-all">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                         Website
                     </Link>
