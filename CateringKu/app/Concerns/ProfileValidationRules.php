@@ -25,7 +25,6 @@ trait ProfileValidationRules
             'required',
             'string',
             'max:255',
-            'alpha_dash',
             $userId === null
                 ? Rule::unique(User::class)
                 : Rule::unique(User::class)->ignore($userId),
