@@ -8,6 +8,9 @@ on:
 jobs:
   laravel-tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./CateringKu   # ← tambah ini
 
     steps:
     - name: Checkout Code
