@@ -176,7 +176,7 @@ function printReceipt() {
                                 <span class="text-gray-700 font-medium">{{ formatPrice(order.subtotal) }}</span>
                             </div>
                             <div class="flex justify-between w-64">
-                                <span class="text-gray-500">PPN (11%)</span>
+                                <span class="text-gray-500">PPN</span>
                                 <span class="text-gray-700 font-medium">{{ formatPrice(order.tax) }}</span>
                             </div>
                             <div class="flex justify-between w-64">
@@ -227,6 +227,93 @@ function printReceipt() {
                         </div>
                     </div>
 
+                    <!-- Distribusi Dana — muncul jika komisi sudah terdistribusi -->
+                    <div v-if="order.commission" class="bg-gray-50 print:bg-transparent print:border print:border-gray-300 rounded-xl p-4">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">📊 Distribusi Dana</h3>
+                        <p class="text-xs text-gray-400 mb-3">Dana otomatis terdistribusi setelah pembayaran terverifikasi</p>
+                        <div class="space-y-2 text-sm">
+                            <!-- Gross -->
+                            <div class="flex justify-between items-center py-1.5 border-b border-gray-100">
+                                <span class="text-gray-500 font-medium">Total Pembayaran (Gross)</span>
+                                <span class="font-semibold text-gray-700">{{ formatPrice(order.commission.gross_amount) }}</span>
+                            </div>
+                            <!-- Pajak Negara -->
+                            <div class="flex justify-between items-center py-1.5 border-b border-gray-100">
+                                <span class="flex items-center gap-2 text-gray-500">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block flex-shrink-0"></span>
+                                    <span>🏛️ Pajak Negara (PPN)</span>
+                                </span>
+                                <span class="font-semibold text-red-600">{{ formatPrice(order.commission.tax_amount) }}</span>
+                            </div>
+                            <!-- Ongkir -->
+                            <div class="flex justify-between items-center py-1.5 border-b border-gray-100">
+                                <span class="flex items-center gap-2 text-gray-500">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block flex-shrink-0"></span>
+                                    🚚 Biaya Pengiriman (Operasional)
+                                </span>
+                                <span class="font-semibold text-gray-600">{{ formatPrice(order.delivery_fee) }}</span>
+                            </div>
+                            <!-- Platform/Admin -->
+                            <div class="flex justify-between items-center py-1.5 border-b border-gray-100">
+                                <span class="flex items-center gap-2 text-gray-500">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block flex-shrink-0"></span>
+                                    <span>🏢 Fee Admin/Platform</span>
+                                </span>
+                                <span class="font-semibold text-blue-600">{{ formatPrice(order.commission.platform_amount) }}</span>
+                            </div>
+                            <!-- Vendor -->
+                            <div class="flex justify-between items-center py-1.5">
+                                <span class="flex items-center gap-2 text-gray-500">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-400 inline-block flex-shrink-0"></span>
+                                    <span>🏪 Payout Vendor</span>
+                                </span>
+                                <span class="font-bold text-green-600 text-base">{{ formatPrice(order.commission.vendor_amount) }}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-300 mt-3 text-center">✅ Dana telah didistribusikan secara otomatis</p>
+                    </div>
+
+                    <!-- Estimasi Distribusi Dana — muncul jika belum ada komisi (belum diverifikasi) -->
+                    <div v-else class="bg-amber-50 print:bg-transparent print:border print:border-gray-300 rounded-xl p-4 border border-amber-100">
+                        <h3 class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-1">📊 Estimasi Distribusi Dana</h3>
+                        <p class="text-xs text-amber-400 mb-3">Distribusi aktual dilakukan setelah pembayaran diverifikasi admin</p>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <span class="text-gray-500 font-medium">Total Pembayaran</span>
+                                <span class="font-semibold text-gray-700">{{ formatPrice(order.total_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <span class="flex items-center gap-2 text-gray-400">
+                                    <span class="w-2 h-2 rounded-full bg-red-300 inline-block flex-shrink-0"></span>
+                                    🏛️ Pajak Negara (PPN)
+                                </span>
+                                <span class="text-red-500">{{ formatPrice(order.tax) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <span class="flex items-center gap-2 text-gray-400">
+                                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block flex-shrink-0"></span>
+                                    🚚 Biaya Pengiriman
+                                </span>
+                                <span class="text-gray-500">{{ formatPrice(order.delivery_fee) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-amber-100">
+                                <span class="flex items-center gap-2 text-gray-400">
+                                    <span class="w-2 h-2 rounded-full bg-blue-300 inline-block flex-shrink-0"></span>
+                                    🏢 Fee Admin/Platform
+                                </span>
+                                <span class="text-blue-500">{{ formatPrice(Math.round(order.subtotal * 0.1)) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1">
+                                <span class="flex items-center gap-2 text-gray-400">
+                                    <span class="w-2 h-2 rounded-full bg-green-300 inline-block flex-shrink-0"></span>
+                                    🏪 Estimasi Payout Vendor
+                                </span>
+                                <span class="font-semibold text-green-500">{{ formatPrice(Math.round(order.subtotal * 0.9)) }}</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-amber-300 mt-3 text-center">⏳ Menunggu verifikasi pembayaran oleh admin</p>
+                    </div>
+
                     <!-- Footer -->
                     <div class="text-center pt-4 border-t border-gray-100">
                         <p class="text-xs text-gray-400">Terima kasih telah memesan melalui CateringKu</p>
@@ -242,11 +329,40 @@ function printReceipt() {
 <style scoped>
 @media print {
     @page {
-        margin: 15mm;
+        margin: 10mm 12mm;
         size: A4;
     }
     .print\:hidden {
         display: none !important;
     }
+    /* Force all content into a single page */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    /* Compact spacing for print */
+    .p-8 { padding: 16px !important; }
+    .p-6 { padding: 12px !important; }
+    .space-y-6 > * + * { margin-top: 12px !important; }
+    .py-3 { padding-top: 6px !important; padding-bottom: 6px !important; }
+    .py-2\.5 { padding-top: 5px !important; padding-bottom: 5px !important; }
+    .py-1\.5 { padding-top: 3px !important; padding-bottom: 3px !important; }
+    .mb-3 { margin-bottom: 8px !important; }
+    .mt-3 { margin-top: 8px !important; }
+    .gap-6 { gap: 12px !important; }
+    .gap-3 { gap: 8px !important; }
+    .pt-4 { padding-top: 10px !important; }
+    /* Prevent page breaks inside receipt sections */
+    .rounded-xl, table, .space-y-2 {
+        break-inside: avoid;
+    }
+    /* Ensure receipt card takes full width */
+    .max-w-3xl { max-width: 100% !important; }
+    /* Proper text sizing */
+    .text-2xl { font-size: 18px !important; }
+    .text-lg { font-size: 15px !important; }
+    .text-base { font-size: 13px !important; }
+    .text-sm { font-size: 12px !important; }
+    .text-xs { font-size: 10px !important; }
 }
 </style>

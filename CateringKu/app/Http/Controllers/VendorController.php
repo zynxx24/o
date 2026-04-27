@@ -19,7 +19,7 @@ class VendorController extends Controller
             $search = $request->q;
             $query->where(function ($q) use ($search) {
                 $q->where('vendor_name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -28,7 +28,7 @@ class VendorController extends Controller
         }
 
         $sort = $request->get('sort', 'rating');
-        $query = match($sort) {
+        $query = match ($sort) {
             'newest' => $query->orderByDesc('created_at'),
             'name' => $query->orderBy('vendor_name'),
             default => $query->orderByDesc('rating')->orderByDesc('total_reviews'),
@@ -46,16 +46,20 @@ class VendorController extends Controller
         ]);
     }
 
-    public function show(int $id)
+    public function show(string $slug)
     {
-        $vendor = Vendor::with(['menuItems' => function ($q) {
-                $q->available()->with('category')->orderBy('category_id');
-            }, 'packages' => function ($q) {
-                $q->where('is_available', true)->with('items');
-            }])
-            ->findOrFail($id);
+        $vendor = Vendor::findBySlug($slug);
 
-        $reviews = Review::where('vendor_id', $id)
+        $vendor->load([
+            'menuItems' => function ($q) {
+                $q->available()->with('category')->orderBy('category_id');
+            },
+            'packages' => function ($q) {
+                $q->where('is_available', true)->with('items');
+            }
+        ]);
+
+        $reviews = Review::where('vendor_id', $vendor->vendor_id)
             ->with('user:id,name')
             ->orderByDesc('created_at')
             ->limit(10)

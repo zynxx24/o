@@ -8,6 +8,7 @@ export type UseAppearanceReturn = {
     appearance: Ref<Appearance>;
     resolvedAppearance: ComputedRef<ResolvedAppearance>;
     updateAppearance: (value: Appearance) => void;
+    isMounted: Ref<boolean>;
 };
 
 export function updateTheme(value: Appearance): void {
@@ -84,6 +85,7 @@ export function initializeTheme(): void {
 }
 
 const appearance = ref<Appearance>('system');
+const isMounted = ref(false);
 
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {
@@ -94,6 +96,8 @@ export function useAppearance(): UseAppearanceReturn {
         if (savedAppearance) {
             appearance.value = savedAppearance;
         }
+
+        isMounted.value = true;
     });
 
     const resolvedAppearance = computed<ResolvedAppearance>(() => {
@@ -120,5 +124,6 @@ export function useAppearance(): UseAppearanceReturn {
         appearance,
         resolvedAppearance,
         updateAppearance,
+        isMounted,
     };
 }

@@ -69,7 +69,7 @@ function vendorPhoto(id: number) { return `https://picsum.photos/seed/vendor${id
             <Link
                 v-for="vendor in vendors.data"
                 :key="vendor.vendor_id"
-                :href="`/vendor/${vendor.vendor_id}`"
+                :href="`/vendor/${vendor.slug}`"
                 class="group block bg-[var(--ck-surface)] rounded-2xl overflow-hidden shadow-sm hover:shadow-xl dark:hover:shadow-ck-primary/5 transition-all border border-[var(--ck-surface-border)] card-hover"
             >
                 <div class="h-44 gradient-hero flex items-center justify-center text-white relative overflow-hidden">

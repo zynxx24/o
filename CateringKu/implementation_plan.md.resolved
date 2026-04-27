@@ -1,88 +1,333 @@
-# Redesign Dashboard Admin & Vendor + Hilangkan Sidebar
+# Komisi, Dompet & Registrasi Vendor
 
-## Latar Belakang
-
-Saat ini:
-1. **Sidebar bawaan Laravel Starter Kit** (`AppSidebar.vue`) masih membungkus halaman Admin/Vendor — tapi halaman-halaman itu **sudah punya navbar sendiri** di dalamnya. Hasilnya: double navbar + sidebar kosong ("Laravel Starter Kit / Dashboard / Repository / Documentation").
-2. **Semua role harus bisa akses halaman utama** (Home, Search, Contact dll.) — routing sudah benar (public routes), tidak ada middleware yang memblokir vendor/admin dari halaman publik.
-3. **Dashboard Admin & Vendor terlalu sederhana** — hanya stat cards + tabel biasa. Perlu dikreasikan jauh lebih premium.
-
-## Proposed Changes
-
-### 1. Layout — Hilangkan Sidebar Wrapper untuk Admin/Vendor
-
-Halaman `Admin/*` dan `Vendor/*` **sudah punya navbar internal** yang di-hardcode di setiap page. Mereka tidak butuh `AppLayout` (sidebar) tambahan.
-
-#### [MODIFY] [app.ts](file:///home/wira/tes/o/CateringKu/resources/js/app.ts)
-
-Tambahkan `Admin/*` dan `Vendor/*` ke daftar halaman yang **return null** (no wrapper layout):
-```diff
-- // Admin/*, Vendor/*, Dashboard → AppLayout (authenticated sidebar)
-- default:
--     return AppLayout;
-+ case name.startsWith('Admin/'):
-+ case name.startsWith('Vendor/'):
-+     return null; // Admin/Vendor pages have their own navbar
-+ default:
-+     return AppLayout; // Dashboard, settings, etc.
-```
+Menambahkan tiga sistem besar yang saling terkait ke platform CateringKu:
+1. **Komisi otomatis** — setiap pembayaran order dipecah ke 3 pihak (platform, vendor, pajak negara)
+2. **Dompet (Wallet)** — setiap user/vendor punya saldo yang bisa ditarik (withdraw)
+3. **Registrasi Vendor** — customer bisa mendaftar jadi vendor dengan deposit wajib Rp 10 juta yang dibekukan
 
 ---
 
-### 2. Dashboard Admin — Redesign Premium
+## User Review Required
 
-#### [MODIFY] [Dashboard.vue](file:///home/wira/tes/o/CateringKu/resources/js/pages/Admin/Dashboard.vue)
+> [!IMPORTANT]
+> **Konfirmasi split komisi default:** Berapa % yang ingin Anda gunakan?
+> Usulan saya: **Pajak negara 11% (PPN)** → dari sisa: **Platform 10%** → sisanya **Vendor 89%**
+> Contoh order Rp 1.000.000:
+> - Pajak: Rp 110.000
+> - Platform: Rp 89.000
+> - Vendor: Rp 801.000
+> Apakah ini sudah sesuai, atau ingin angka berbeda?
 
-Redesign jadi dashboard premium dengan:
-- **Header greeting** dengan waktu hari ini dan animasi
-- **Stat cards** dengan micro-animations, gradients, dan persentase perubahan
-- **Quick action buttons** (Konfirmasi Pesanan, Verifikasi Pembayaran, Baca Pesan)
-- **Revenue chart area** (visual placeholder dengan gradient bar chart)
-- **Recent orders** tabel yang lebih premium dengan row hover effects
-- **Activity timeline** sidebar kanan
-- **Link ke halaman utama** ("Lihat Website →") di navbar agar admin bisa akses public site
+> [!IMPORTANT]
+> **Withdraw manual vs otomatis:** Apakah withdraw vendor perlu approval admin dulu, atau langsung otomatis ke rekening?
+> Usulan: **Manual — vendor request → admin approve → dana keluar**
 
----
-
-### 3. Dashboard Vendor — Redesign Premium
-
-#### [MODIFY] [Dashboard.vue](file:///home/wira/tes/o/CateringKu/resources/js/pages/Vendor/Dashboard.vue)
-
-Redesign jadi dashboard premium dengan:
-- **Welcome banner** bergradient dengan nama vendor dan rating bintang
-- **Stat cards** dengan ikon yang lebih besar, micro-animations, progress indicators
-- **Quick actions** (Tambah Menu, Lihat Pesanan, Respon Ulasan)
-- **Revenue mini chart** (visual bar chart dari 7 hari terakhir)
-- **Recent orders** list yang lebih informatif
-- **Latest reviews** section inline
-- **Link ke halaman utama** di navbar agar vendor bisa browsing website publik
-
----
-
-### 4. Navbar Admin/Vendor — Tambah Link "Website"
-
-Setiap navbar di halaman Admin/Vendor pages perlu ditambah link ke halaman utama (`/`), agar admin/vendor tidak "terjebak" di panel manajemen.
-
-**Files yang perlu dimodifikasi (navbar):**
-- `Admin/Dashboard.vue`, `Admin/Orders.vue`, `Admin/Messages.vue`, `Admin/MessageDetail.vue`
-- `Vendor/Dashboard.vue`, `Vendor/Orders.vue`, `Vendor/Menu.vue`, `Vendor/Reviews.vue`
+> [!WARNING]
+> **Fresh migrate diperlukan** — Skema baru tidak bisa diterapkan dengan `migrate` biasa karena ada perubahan structural. Akan digunakan `migrate:fresh --seed` yang **menghapus semua data.**
 
 ---
 
 ## Open Questions
 
-> [!IMPORTANT]
-> **Apakah desain dashboard ini sudah sesuai keinginan?** Saya akan menggunakan data yang sudah di-pass dari controller (stats, recentOrders, dll.) — tidak perlu perubahan backend, hanya frontend/UI.
+- Apakah deposit Rp 10 juta dibayar lewat transfer bank manual (diverifikasi admin) atau otomatis via payment gateway?
+- Apakah vendor yang akun-nya ditutup (tarik deposit) bisa daftar ulang? Atau blacklist permanen?
+- Pajak sudah ada di tabel `orders` sebagai kolom `tax` — apakah ini sama dengan pajak negara yang dimaksud, atau terpisah?
 
-> [!NOTE]
-> Halaman `Dashboard.vue` (root, bukan Admin/Vendor) saat ini adalah placeholder bawaan Laravel yang redirect berdasarkan role. Ini bisa tetap dibiarkan karena route `/dashboard` sudah melakukan redirect ke `/admin` atau `/vendor-panel` sesuai role.
+---
+
+## Arsitektur Sistem
+
+### Alur Komisi
+
+```
+Order dibuat → Customer bayar → Admin verifikasi pembayaran
+→ Sistem otomatis split:
+    ├── Pajak Negara (PPN 11%) → disimpan di platform, dilaporkan
+    ├── Fee Platform (X%)      → masuk Wallet admin/platform
+    └── Payout Vendor (Y%)     → masuk Wallet vendor
+```
+
+### Alur Dompet
+
+```
+Wallet Balance = Earnings masuk - Withdrawals keluar
+Vendor: bisa request withdraw → admin approve → saldo berkurang
+Admin: lihat semua wallet, approve/reject withdraw request
+Customer: tidak punya wallet (hanya bayar)
+```
+
+### Alur Registrasi Vendor
+
+```
+Customer → "Daftar sebagai Vendor" → Isi profil vendor
+→ Upload bukti bayar deposit Rp 10jt → Admin verifikasi
+→ Deposit dibekukan di DepositAccount → Role user → 'vendor'
+→ Vendor aktif bisa terima order
+
+Jika vendor minta tarik deposit:
+→ Admin approve → Deposit dicairkan → Role kembali ke 'customer'
+→ Vendor status → 'closed'
+```
+
+---
+
+## Proposed Changes
+
+### Database (New Migrations)
+
+#### [NEW] `2026_04_24_000001_create_wallets_table.php`
+Dompet untuk setiap user (vendor & admin).
+```
+wallets
+  wallet_id   PK
+  user_id     FK users.id  UNIQUE
+  balance     decimal(15,2) default 0     ← saldo tersedia (bisa ditarik)
+  frozen_balance decimal(15,2) default 0  ← deposit yang dibekukan (vendor)
+  total_earned   decimal(15,2) default 0  ← akumulasi penerimaan
+  total_withdrawn decimal(15,2) default 0 ← akumulasi penarikan
+  timestamps
+```
+
+#### [NEW] `2026_04_24_000002_create_wallet_transactions_table.php`
+Ledger / riwayat semua mutasi dompet.
+```
+wallet_transactions
+  id          PK
+  wallet_id   FK wallets
+  type        enum: credit|debit
+  category    enum: commission|withdrawal|deposit|deposit_refund|fee|tax|adjustment
+  amount      decimal(15,2)
+  balance_after decimal(15,2)   ← snapshot saldo setelah transaksi
+  reference_type string nullable ← 'order'|'withdrawal_request'
+  reference_id   bigint nullable ← FK ke order_id atau withdrawal_id
+  description    string
+  created_at
+```
+
+#### [NEW] `2026_04_24_000003_create_commission_rules_table.php`
+Aturan split komisi yang bisa diubah admin.
+```
+commission_rules
+  id           PK
+  name         string         ← 'default'
+  tax_rate     decimal(5,2)  default 11.00  ← PPN %
+  platform_rate decimal(5,2) default 10.00  ← Platform fee % (dari net setelah tax)
+  vendor_rate   decimal(5,2)  ← auto = 100 - platform_rate
+  is_active     boolean default true
+  timestamps
+```
+
+#### [NEW] `2026_04_24_000004_create_order_commissions_table.php`
+Record split komisi per order (dibuat saat admin verifikasi payment).
+```
+order_commissions
+  id              PK
+  order_id        FK orders.order_id UNIQUE
+  gross_amount    decimal(15,2)  ← total_amount order
+  tax_amount      decimal(15,2)  ← pajak negara
+  platform_amount decimal(15,2)  ← fee platform
+  vendor_amount   decimal(15,2)  ← payout vendor
+  tax_rate        decimal(5,2)
+  platform_rate   decimal(5,2)
+  status          enum: pending|distributed  ← distributed setelah dana masuk wallet
+  distributed_at  timestamp nullable
+  timestamps
+```
+
+#### [NEW] `2026_04_24_000005_create_withdrawal_requests_table.php`
+Request penarikan dana oleh vendor.
+```
+withdrawal_requests
+  id              PK
+  wallet_id       FK wallets
+  amount          decimal(15,2)
+  bank_name       string
+  bank_account    string
+  account_name    string
+  status          enum: pending|approved|rejected
+  admin_note      text nullable
+  reviewed_by     FK users nullable
+  reviewed_at     timestamp nullable
+  timestamps
+```
+
+#### [NEW] `2026_04_24_000006_create_vendor_applications_table.php`
+Pendaftaran vendor oleh customer.
+```
+vendor_applications
+  id               PK
+  user_id          FK users UNIQUE (satu user satu aplikasi aktif)
+  vendor_name      string
+  description      text
+  address          text
+  city, province   string
+  phone, email     string
+  deposit_amount   decimal(15,2) default 10000000
+  payment_proof    string nullable  ← URL bukti transfer deposit
+  payment_method   string nullable
+  status           enum: draft|submitted|deposit_pending|approved|rejected
+  rejection_reason text nullable
+  reviewed_by      FK users nullable
+  reviewed_at      timestamp nullable
+  timestamps
+```
+
+#### [MODIFY] `users` table
+Tambah kolom `vendor_deposit_status` enum: `none|frozen|refunded`.
+
+---
+
+### Models
+
+#### [NEW] `Wallet.php`
+#### [NEW] `WalletTransaction.php`
+#### [NEW] `CommissionRule.php`
+#### [NEW] `OrderCommission.php`
+#### [NEW] `WithdrawalRequest.php`
+#### [NEW] `VendorApplication.php`
+#### [MODIFY] `User.php` — tambah relasi wallet, vendorApplication
+#### [MODIFY] `Vendor.php` — tambah relasi commission
+
+---
+
+### Services (Business Logic)
+
+#### [NEW] `CommissionService.php`
+```php
+// Dipanggil saat admin verifikasi payment (order lunas)
+distributeCommission(Order $order): OrderCommission
+// Split otomatis, credit wallet platform & vendor
+```
+
+#### [NEW] `WalletService.php`
+```php
+credit(User $user, amount, category, reference, description)
+debit(User $user, amount, category, reference, description)
+freeze(User $user, amount)    // Deposit vendor
+unfreeze(User $user, amount)  // Refund deposit
+```
+
+---
+
+### Controllers
+
+#### [NEW] `WalletController.php`
+- `GET /wallet` — halaman dompet user/vendor
+- `POST /wallet/withdraw` — request withdraw
+
+#### [NEW] `VendorApplicationController.php`
+- `GET /become-vendor` — form pendaftaran vendor
+- `POST /become-vendor` — submit aplikasi + upload bukti deposit
+- `GET /become-vendor/status` — status aplikasi
+
+#### [MODIFY] `AdminController.php`
+- Tambah: `GET /admin/wallets` — overview semua wallet
+- Tambah: `GET /admin/withdrawals` — daftar request withdraw
+- Tambah: `PATCH /admin/withdrawals/{id}/approve` — setujui
+- Tambah: `PATCH /admin/withdrawals/{id}/reject` — tolak
+- Tambah: `GET /admin/vendor-applications` — daftar aplikasi vendor
+- Tambah: `PATCH /admin/vendor-applications/{id}/approve` — setujui + bekukan deposit
+- Tambah: `PATCH /admin/vendor-applications/{id}/reject` — tolak
+
+#### [MODIFY] `AdminController::verifyPayment()`
+Setelah payment diverifikasi → panggil `CommissionService::distributeCommission()`
+
+---
+
+### Routes
+
+#### [MODIFY] `routes/web.php`
+```php
+// Customer
+Route::get('/wallet', [WalletController::class, 'index'])
+Route::post('/wallet/withdraw', [WalletController::class, 'requestWithdrawal'])
+Route::get('/become-vendor', [VendorApplicationController::class, 'create'])
+Route::post('/become-vendor', [VendorApplicationController::class, 'store'])
+Route::get('/become-vendor/status', [VendorApplicationController::class, 'status'])
+
+// Admin
+Route::prefix('admin')->group(function() {
+    Route::get('/wallets', ...)
+    Route::get('/withdrawals', ...)
+    Route::patch('/withdrawals/{id}/approve', ...)
+    Route::patch('/withdrawals/{id}/reject', ...)
+    Route::get('/vendor-applications', ...)
+    Route::patch('/vendor-applications/{id}/approve', ...)
+    Route::patch('/vendor-applications/{id}/reject', ...)
+    Route::get('/commissions', ...)         // dashboard komisi
+    Route::get('/commission-rules', ...)   // edit aturan %
+    Route::patch('/commission-rules', ...)
+})
+```
+
+---
+
+### Vue Pages
+
+#### [NEW] `pages/Wallet/Index.vue`
+- Saldo tersedia + saldo dibekukan (jika vendor)
+- Tombol "Tarik Dana" → form bank
+- Tabel riwayat transaksi (kredit/debit, kategori, tanggal)
+- Status withdraw request terakhir
+
+#### [NEW] `pages/BecomeVendor/Create.vue`
+- Form profil vendor (nama, deskripsi, alamat, dll)
+- Info deposit Rp 10 juta: "Dana ini dibekukan sebagai jaminan"
+- Upload bukti transfer deposit
+- Peringatan: "Menarik deposit = akun vendor ditutup"
+
+#### [NEW] `pages/BecomeVendor/Status.vue`
+- Status aplikasi: draft / menunggu review / disetujui / ditolak
+- Alasan penolakan jika ada
+
+#### [NEW] `pages/Admin/Wallets.vue`
+- Tabel semua wallet (balance, frozen, total earned)
+- Filter per role
+
+#### [NEW] `pages/Admin/Withdrawals.vue`
+- Daftar request withdraw dengan status
+- Tombol Approve/Reject dengan catatan admin
+
+#### [NEW] `pages/Admin/VendorApplications.vue`
+- Daftar aplikasi vendor
+- Preview profil + bukti deposit
+- Approve/Reject
+
+#### [NEW] `pages/Admin/Commissions.vue`
+- Dashboard total komisi: platform, vendor, pajak
+- Tabel komisi per order
+- Edit aturan persentase
+
+---
+
+### Perubahan UX Penting
+
+1. **Navbar** — tambah ikon dompet jika user login
+2. **Dashboard vendor** — tampilkan saldo dompet + pendapatan bulan ini
+3. **Admin dashboard** — tambah stat: total komisi platform, pending withdrawals
+4. **Profile page** — tambah tombol "Daftar sebagai Vendor" jika role=customer
+5. **Vendor registration flow** — stepper: Profil → Deposit → Review → Aktif
+
+---
 
 ## Verification Plan
 
+### Automated
+```bash
+php artisan migrate:fresh --seed --seeder=FullTestSeeder
+# Verifikasi tabel baru
+# Verifikasi seeder membuat wallet untuk semua user
+```
+
 ### Manual Verification
-1. Login sebagai **Admin** → cek dashboard baru, pastikan stat cards dan tabel muncul
-2. Login sebagai **Vendor** → cek dashboard baru, pastikan semua data vendor muncul
-3. Login sebagai **Customer** → pastikan tetap redirect ke `/orders`
-4. Dari dashboard Admin/Vendor, klik "Website" → harus buka halaman utama
-5. Pastikan **tidak ada sidebar** yang muncul di halaman Admin/Vendor
-6. Pastikan halaman utama bisa diakses oleh semua role (admin, vendor, customer, guest)
+1. Login sebagai customer → klik "Daftar Vendor" → isi form → upload bukti → admin approve
+2. Login sebagai admin → verifikasi payment order → cek wallet vendor bertambah
+3. Login sebagai vendor → request withdraw → admin approve → cek saldo berkurang
+4. Login sebagai vendor → request tarik deposit → cek akun jadi customer
+
+### Business Logic Checks
+- [ ] Komisi hanya dibuat saat `payment_status = paid`
+- [ ] Deposit Rp 10jt tepat, tidak kurang
+- [ ] Withdraw tidak boleh melebihi `balance` (bukan `frozen_balance`)
+- [ ] Tarik deposit → role jadi customer, vendor status jadi closed
+- [ ] Vendor baru otomatis dapat wallet saat disetujui

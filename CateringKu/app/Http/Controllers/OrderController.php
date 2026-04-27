@@ -35,9 +35,14 @@ class OrderController extends Controller
 
     public function receipt(Request $request, int $id)
     {
-        $order = Order::with(['user', 'vendor', 'items.menuItem', 'payments'])
-            ->where('user_id', $request->user()->id)
-            ->findOrFail($id);
+        $query = Order::with(['user', 'vendor', 'items.menuItem', 'payments', 'commission']);
+
+        // Admin can view any order receipt, users can only view their own
+        if ($request->user()->role !== 'admin') {
+            $query->where('user_id', $request->user()->id);
+        }
+
+        $order = $query->findOrFail($id);
 
         return Inertia::render('Orders/Receipt', [
             'order' => $order,
@@ -49,6 +54,11 @@ class OrderController extends Controller
         $order = Order::where('user_id', $request->user()->id)
             ->where('status', 'pending')
             ->findOrFail($id);
+
+        // FIX: Validasi reason agar tidak bisa diisi string panjang/berbahaya
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
 
         $order->update([
             'status' => 'cancelled',

@@ -10,6 +10,7 @@ interface Vendor {
     rating: number
     total_reviews: number
     logo_url: string | null
+    slug: string
 }
 
 interface Category {
@@ -119,7 +120,7 @@ function formatRating(r: number) {
                 <Link
                     v-for="vendor in vendors"
                     :key="vendor.vendor_id"
-                    :href="`/vendor/${vendor.vendor_id}`"
+                    :href="`/vendor/${vendor.slug}`"
                     class="group block bg-[var(--ck-surface)] rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl dark:hover:shadow-ck-primary/5 transition-all duration-300 border border-[var(--ck-surface-border)] card-hover"
                 >
                     <!-- Image -->

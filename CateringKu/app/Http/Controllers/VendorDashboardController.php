@@ -35,10 +35,23 @@ class VendorDashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // All-time monthly revenue from paid orders
+        $monthlyRevenue = $vendor->orders()
+            ->where('payment_status', 'paid')
+            ->selectRaw("strftime('%Y-%m', created_at) as month, SUM(total_amount) as revenue")
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get()
+            ->map(fn($row) => [
+                'month' => \Carbon\Carbon::createFromFormat('Y-m', $row->month)->translatedFormat('M Y'),
+                'revenue' => (float) $row->revenue,
+            ]);
+
         return Inertia::render('Vendor/Dashboard', [
             'vendor' => $vendor,
             'stats' => $stats,
             'recentOrders' => $recentOrders,
+            'monthlyRevenue' => $monthlyRevenue,
         ]);
     }
 

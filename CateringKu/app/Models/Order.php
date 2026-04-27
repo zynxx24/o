@@ -51,10 +51,18 @@ class Order extends Model
         return $this->hasOne(Review::class, 'order_id', 'order_id');
     }
 
+    public function commission(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(OrderCommission::class, 'order_id', 'order_id');
+    }
+
     public static function generateOrderNumber(): string
     {
         $year = date('Y');
         $count = self::whereYear('created_at', $year)->count() + 1;
-        return 'ORD-' . $year . '-' . str_pad($count, 6, '0', STR_PAD_LEFT);
+        // FIX: Tambah suffix uniqid 5 karakter agar unik saat dua checkout
+        // terjadi di waktu yang bersamaan (race condition count)
+        $suffix = strtoupper(substr(uniqid(), -5));
+        return 'ORD-' . $year . '-' . str_pad($count, 6, '0', STR_PAD_LEFT) . '-' . $suffix;
     }
 }

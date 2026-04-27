@@ -9,6 +9,7 @@ interface Vendor {
     rating: number
     total_reviews: number
     logo_url: string | null
+    slug: string
 }
 
 defineProps<{
@@ -22,7 +23,7 @@ function formatRating(r: number) {
 
 <template>
     <Link
-        :href="`/vendor/${vendor.vendor_id}`"
+        :href="`/vendor/${vendor.slug}`"
         class="group block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-gray-100 card-hover"
     >
         <!-- Image -->

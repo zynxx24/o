@@ -12,7 +12,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-#[Fillable(['username', 'name', 'email', 'password', 'phone', 'address', 'role', 'status'])]
+// FIX: 'role', 'status', 'vendor_deposit_status' DIHAPUS dari Fillable.
+// Ketiga field ini hanya boleh diubah secara eksplisit via forceFill() atau
+// update() langsung di controller yang berwenang, BUKAN via mass assignment.
+#[Fillable(['username', 'name', 'email', 'password', 'phone', 'address'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -48,6 +51,27 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function vendorApplication(): HasOne
+    {
+        return $this->hasOne(VendorApplication::class);
+    }
+
+    /** Buat wallet jika belum ada */
+    public function getOrCreateWallet(): Wallet
+    {
+        return $this->wallet ?? $this->wallet()->create([
+            'balance'         => 0,
+            'frozen_balance'  => 0,
+            'total_earned'    => 0,
+            'total_withdrawn' => 0,
+        ]);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -61,5 +85,10 @@ class User extends Authenticatable
     public function isCustomer(): bool
     {
         return $this->role === 'customer';
+    }
+
+    public function hasDepositFrozen(): bool
+    {
+        return $this->vendor_deposit_status === 'frozen';
     }
 }

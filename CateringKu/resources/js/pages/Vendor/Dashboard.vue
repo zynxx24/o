@@ -3,7 +3,7 @@ import { Head, Link, router } from '@inertiajs/vue3'
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import VendorLayout from '@/layouts/VendorLayout.vue'
 
-const props = defineProps<{ vendor: any, stats: any, recentOrders: any[] }>()
+const props = defineProps<{ vendor: any, stats: any, recentOrders: any[], monthlyRevenue: { month: string, revenue: number }[] }>()
 
 function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p) }
 function formatDate(d: string) { return new Date(d).toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }) }
@@ -55,32 +55,39 @@ onMounted(() => {
 let pollInterval: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
     pollInterval = setInterval(() => {
-        router.reload({ only: ['stats', 'recentOrders'] })
+        router.reload({ only: ['stats', 'recentOrders', 'monthlyRevenue'] })
     }, 30000)
 })
 onUnmounted(() => {
     if (pollInterval) clearInterval(pollInterval)
 })
 
-const chartBars = computed(() => {
-    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-    const now = new Date()
-    const dayOfWeek = now.getDay()
-    const values = days.map((_, i) => {
-        const ordersForDay = props.recentOrders.filter(o => {
-            const d = new Date(o.created_at)
-            return d.getDay() === ((i + 1) % 7)
-        })
-        return ordersForDay.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
-    })
-    const max = Math.max(...values, 1)
-    return days.map((label, i) => ({
-        label,
-        value: values[i],
-        height: Math.max((values[i] / max) * 100, 4),
-        isToday: ((i + 1) % 7) === dayOfWeek,
+// ── Line Chart ──────────────────────────────────────
+const chartW = 600
+const chartH = 160
+const padX = 0
+const padY = 10
+
+const lineChartData = computed(() => {
+    const data = props.monthlyRevenue || []
+    if (data.length === 0) return { points: '', areaPoints: '', dots: [], labels: [] }
+    const max = Math.max(...data.map(d => d.revenue), 1)
+    const stepX = data.length > 1 ? (chartW - padX * 2) / (data.length - 1) : 0
+    const dots = data.map((d, i) => ({
+        x: padX + i * stepX,
+        y: padY + (chartH - padY * 2) - (d.revenue / max) * (chartH - padY * 2),
+        month: d.month,
+        revenue: d.revenue,
     }))
+    const points = dots.map(d => `${d.x},${d.y}`).join(' ')
+    const areaPoints = `${dots[0].x},${chartH - padY} ${points} ${dots[dots.length - 1].x},${chartH - padY}`
+    const labels = data.length <= 12
+        ? dots.map((d, i) => ({ x: d.x, label: data[i].month.split(' ')[0] }))
+        : dots.filter((_, i) => i % Math.ceil(data.length / 8) === 0 || i === data.length - 1)
+            .map((d) => ({ x: d.x, label: data[dots.indexOf(d)].month.split(' ')[0] }))
+    return { points, areaPoints, dots, labels }
 })
+const hoveredDot = ref<number | null>(null)
 
 const statCards = [
     { key: 'totalOrders', label: 'Total Pesanan', icon: '📦', gradient: 'from-blue-500 via-blue-600 to-indigo-700', ring: 'ring-blue-100', iconBg: 'bg-blue-500/10' },
@@ -92,8 +99,9 @@ const statCards = [
 const quickActions = [
     { label: 'Tambah Menu', icon: '➕', href: '/vendor-panel/menu', color: 'from-emerald-400 to-teal-500' },
     { label: 'Lihat Pesanan', icon: '📋', href: '/vendor-panel/orders', color: 'from-blue-400 to-indigo-500' },
+    { label: 'Dompet', icon: '💳', href: '/wallet', color: 'from-violet-400 to-purple-500' },
     { label: 'Respon Ulasan', icon: '💬', href: '/vendor-panel/reviews', color: 'from-amber-400 to-orange-500' },
-    { label: 'Lihat Website', icon: '🌐', href: '/', color: 'from-purple-400 to-pink-500' },
+    { label: 'Lihat Website', icon: '🌐', href: '/', color: 'from-pink-400 to-rose-500' },
 ]
 </script>
 
@@ -153,7 +161,7 @@ const quickActions = [
             </div>
 
             <!-- Quick Actions -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
                 <Link v-for="action in quickActions" :key="action.label" :href="action.href"
                       class="group flex items-center gap-3 bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] p-4 hover:shadow-lg hover:shadow-gray-100/50 dark:hover:shadow-black/20 hover:-translate-y-0.5 transition-all duration-200">
                     <div :class="`w-10 h-10 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center text-white text-lg shadow-sm group-hover:scale-110 transition-transform`">
@@ -165,30 +173,35 @@ const quickActions = [
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Revenue Chart -->
+                <!-- Revenue Line Chart -->
                 <div class="lg:col-span-2 bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] p-6">
                     <div class="flex items-center justify-between mb-6">
                         <div>
-                            <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg">Pendapatan Mingguan</h3>
-                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Berdasarkan pesanan terbaru</p>
+                            <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg">Pendapatan All‑Time</h3>
+                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Tren pendapatan bulanan keseluruhan</p>
                         </div>
-                        <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100">
+                        <div class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">
                             {{ formatPrice(stats.totalRevenue) }}
                         </div>
                     </div>
-                    <div class="flex items-end justify-between gap-3 h-40 px-2">
-                        <div v-for="bar in chartBars" :key="bar.label" class="flex-1 flex flex-col items-center gap-2">
-                            <div class="w-full relative flex items-end justify-center" style="height: 128px">
-                                <div :class="[
-                                    'w-full max-w-[44px] rounded-xl transition-all duration-700 ease-out',
-                                    bar.isToday 
-                                        ? 'bg-gradient-to-t from-ck-primary to-orange-400 shadow-lg shadow-orange-200/50'
-                                        : 'bg-gradient-to-t from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-ck-primary/60 hover:to-orange-300/60'
-                                ]"
-                                :style="{ height: `${bar.height}%` }">
-                                </div>
-                            </div>
-                            <span :class="['text-xs font-semibold', bar.isToday ? 'text-ck-primary' : 'text-gray-400']">{{ bar.label }}</span>
+                    <div v-if="(monthlyRevenue || []).length === 0" class="flex items-center justify-center h-40 text-gray-400 text-sm">Belum ada data pendapatan</div>
+                    <div v-else class="relative">
+                        <svg :viewBox="`0 0 ${chartW} ${chartH + 20}`" class="w-full h-44" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="vendorAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#f97316" stop-opacity="0.3" />
+                                    <stop offset="100%" stop-color="#f97316" stop-opacity="0.02" />
+                                </linearGradient>
+                            </defs>
+                            <line v-for="i in 4" :key="i" :x1="padX" :x2="chartW - padX" :y1="padY + (chartH - padY * 2) * i / 4" :y2="padY + (chartH - padY * 2) * i / 4" stroke="currentColor" class="text-gray-100 dark:text-gray-800" stroke-width="1" />
+                            <polygon :points="lineChartData.areaPoints" fill="url(#vendorAreaGrad)" />
+                            <polyline :points="lineChartData.points" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="drop-shadow-sm" />
+                            <circle v-for="(dot, i) in lineChartData.dots" :key="i" :cx="dot.x" :cy="dot.y" :r="hoveredDot === i ? 5 : 3" fill="#f97316" stroke="#fff" :stroke-width="hoveredDot === i ? 3 : 2" class="cursor-pointer transition-all duration-200" @mouseenter="hoveredDot = i" @mouseleave="hoveredDot = null" />
+                            <text v-for="l in lineChartData.labels" :key="l.x" :x="l.x" :y="chartH + 14" text-anchor="middle" class="fill-gray-400 dark:fill-gray-500 text-[10px] font-medium">{{ l.label }}</text>
+                        </svg>
+                        <div v-if="hoveredDot !== null && lineChartData.dots[hoveredDot]" class="absolute bg-gray-900 dark:bg-gray-800 text-white text-xs px-3 py-2 rounded-lg pointer-events-none shadow-xl z-10 -translate-x-1/2 whitespace-nowrap" :style="{ left: `${(lineChartData.dots[hoveredDot].x / chartW) * 100}%`, top: `${(lineChartData.dots[hoveredDot].y / (chartH + 20)) * 100 - 16}%` }">
+                            <p class="font-semibold">{{ lineChartData.dots[hoveredDot].month }}</p>
+                            <p class="text-orange-300">{{ formatPrice(lineChartData.dots[hoveredDot].revenue) }}</p>
                         </div>
                     </div>
                 </div>

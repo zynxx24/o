@@ -173,6 +173,56 @@ function printReceipt() {
                         </div>
                     </div>
 
+                    <!-- Commission Breakdown -->
+                    <div class="bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100 dark:border-[#2a2c45] p-6 shadow-sm">
+                        <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-4 text-sm">Distribusi Dana</h3>
+                        <div v-if="order.commission" class="space-y-2.5 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 dark:text-gray-500 text-xs flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-gray-400 inline-block"></span>Gross
+                                </span>
+                                <span class="font-medium text-gray-700 dark:text-gray-300">{{ formatPrice(order.commission.gross_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 dark:text-gray-500 text-xs flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
+                                    🏛️ Pajak Negara (PPN)
+                                </span>
+                                <span class="font-medium text-red-500">{{ formatPrice(order.commission.tax_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 dark:text-gray-500 text-xs flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                                    🚚 Ongkir
+                                </span>
+                                <span class="font-medium text-gray-500 dark:text-gray-400">{{ formatPrice(order.delivery_fee) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400 dark:text-gray-500 text-xs flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-blue-400 inline-block"></span>
+                                    🏢 Fee Admin/Platform
+                                </span>
+                                <span class="font-semibold text-blue-500">{{ formatPrice(order.commission.platform_amount) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center border-t border-gray-100 dark:border-[#2a2c45] pt-2 mt-1">
+                                <span class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+                                    🏪 Payout Vendor
+                                </span>
+                                <span class="font-bold text-green-500 text-base">{{ formatPrice(order.commission.vendor_amount) }}</span>
+                            </div>
+                            <div class="flex items-center justify-end mt-1">
+                                <span class="text-xs px-2 py-0.5 rounded-full" :class="order.commission.status === 'distributed' ? 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400'">
+                                    {{ order.commission.status === 'distributed' ? '✅ Terdistribusi' : '⏳ Menunggu' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div v-else class="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+                            <p>⏳ Belum ada distribusi</p>
+                            <p class="text-xs mt-1">Verifikasi pembayaran untuk mendistribusikan dana</p>
+                        </div>
+                    </div>
+
                     <!-- Actions -->
                     <button @click="printReceipt" class="w-full px-4 py-3 bg-white dark:bg-[#1f2037] border border-gray-200 dark:border-[#2a2c45] rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:border-ck-primary/40 transition-colors flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>

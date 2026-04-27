@@ -10,6 +10,7 @@ const props = defineProps<{
     }
     recentOrders: any[]
     pendingPayments: any[]
+    monthlyRevenue: { month: string, revenue: number }[]
 }>()
 
 function formatPrice(p: number) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(p) }
@@ -63,7 +64,7 @@ onMounted(() => {
 let pollInterval: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
     pollInterval = setInterval(() => {
-        router.reload({ only: ['stats', 'recentOrders', 'pendingPayments'] })
+        router.reload({ only: ['stats', 'recentOrders', 'pendingPayments', 'monthlyRevenue'] })
     }, 30000)
 })
 onUnmounted(() => {
@@ -84,25 +85,33 @@ const quickActions = [
     { label: 'Lihat Website', icon: '🌐', href: '/', count: null, color: 'from-purple-400 to-pink-500' },
 ]
 
-const chartBars = computed(() => {
-    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-    const now = new Date()
-    const dayOfWeek = now.getDay()
-    const values = days.map((_, i) => {
-        const ordersForDay = props.recentOrders.filter(o => {
-            const d = new Date(o.created_at)
-            return d.getDay() === ((i + 1) % 7)
-        })
-        return ordersForDay.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
-    })
-    const max = Math.max(...values, 1)
-    return days.map((label, i) => ({
-        label,
-        value: values[i],
-        height: Math.max((values[i] / max) * 100, 4),
-        isToday: ((i + 1) % 7) === dayOfWeek,
+// ── Line Chart ──────────────────────────────────────
+const chartW = 600
+const chartH = 180
+const padX = 0
+const padY = 10
+
+const lineChartData = computed(() => {
+    const data = props.monthlyRevenue || []
+    if (data.length === 0) return { points: '', areaPoints: '', dots: [], labels: [] }
+    const max = Math.max(...data.map(d => d.revenue), 1)
+    const stepX = data.length > 1 ? (chartW - padX * 2) / (data.length - 1) : 0
+    const dots = data.map((d, i) => ({
+        x: padX + i * stepX,
+        y: padY + (chartH - padY * 2) - (d.revenue / max) * (chartH - padY * 2),
+        month: d.month,
+        revenue: d.revenue,
     }))
+    const points = dots.map(d => `${d.x},${d.y}`).join(' ')
+    const areaPoints = `${dots[0].x},${chartH - padY} ${points} ${dots[dots.length - 1].x},${chartH - padY}`
+    const labels = data.length <= 12
+        ? dots.map((d, i) => ({ x: d.x, label: data[i].month.split(' ')[0] }))
+        : dots.filter((_, i) => i % Math.ceil(data.length / 8) === 0 || i === data.length - 1)
+            .map((d, i2) => ({ x: d.x, label: data[dots.indexOf(d)].month.split(' ')[0] }))
+    return { points, areaPoints, dots, labels }
 })
+
+const hoveredDot = ref<number | null>(null)
 </script>
 
 <template>
@@ -151,30 +160,41 @@ const chartBars = computed(() => {
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Revenue Chart -->
+                <!-- Revenue Line Chart -->
                 <div class="lg:col-span-2 bg-white dark:bg-[#1f2037] rounded-2xl border border-gray-100/80 dark:border-[#2a2c45] p-6">
                     <div class="flex items-center justify-between mb-6">
                         <div>
-                            <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg">Pendapatan Minggu Ini</h3>
-                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Overview harian berdasarkan pesanan terbaru</p>
+                            <h3 class="font-bold text-gray-900 dark:text-gray-100 text-lg">Pendapatan All‑Time</h3>
+                            <p class="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Tren pendapatan bulanan keseluruhan</p>
                         </div>
-                        <div class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100">
+                        <div class="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">
                             {{ formatPrice(stats.totalRevenue) }}
                         </div>
                     </div>
-                    <div class="flex items-end justify-between gap-3 h-44 px-2">
-                        <div v-for="bar in chartBars" :key="bar.label" class="flex-1 flex flex-col items-center gap-2">
-                            <div class="w-full relative flex items-end justify-center" style="height: 148px">
-                                <div :class="[
-                                    'w-full max-w-[48px] rounded-xl transition-all duration-700 ease-out',
-                                    bar.isToday 
-                                        ? 'bg-gradient-to-t from-ck-primary to-orange-400 shadow-lg shadow-orange-200/50' 
-                                        : 'bg-gradient-to-t from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-ck-primary/60 hover:to-orange-300/60'
-                                ]"
-                                :style="{ height: `${bar.height}%` }">
-                                </div>
-                            </div>
-                            <span :class="['text-xs font-semibold', bar.isToday ? 'text-ck-primary' : 'text-gray-400']">{{ bar.label }}</span>
+                    <div v-if="monthlyRevenue.length === 0" class="flex items-center justify-center h-44 text-gray-400 text-sm">Belum ada data pendapatan</div>
+                    <div v-else class="relative">
+                        <svg :viewBox="`0 0 ${chartW} ${chartH + 20}`" class="w-full h-48" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#f97316" stop-opacity="0.3" />
+                                    <stop offset="100%" stop-color="#f97316" stop-opacity="0.02" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Grid lines -->
+                            <line v-for="i in 4" :key="i" :x1="padX" :x2="chartW - padX" :y1="padY + (chartH - padY * 2) * i / 4" :y2="padY + (chartH - padY * 2) * i / 4" stroke="currentColor" class="text-gray-100 dark:text-gray-800" stroke-width="1" />
+                            <!-- Area fill -->
+                            <polygon :points="lineChartData.areaPoints" fill="url(#areaGrad)" />
+                            <!-- Line -->
+                            <polyline :points="lineChartData.points" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="drop-shadow-sm" />
+                            <!-- Dots -->
+                            <circle v-for="(dot, i) in lineChartData.dots" :key="i" :cx="dot.x" :cy="dot.y" :r="hoveredDot === i ? 5 : 3" fill="#f97316" stroke="#fff" :stroke-width="hoveredDot === i ? 3 : 2" class="cursor-pointer transition-all duration-200" @mouseenter="hoveredDot = i" @mouseleave="hoveredDot = null" />
+                            <!-- X labels -->
+                            <text v-for="l in lineChartData.labels" :key="l.x" :x="l.x" :y="chartH + 14" text-anchor="middle" class="fill-gray-400 dark:fill-gray-500 text-[10px] font-medium">{{ l.label }}</text>
+                        </svg>
+                        <!-- Tooltip -->
+                        <div v-if="hoveredDot !== null && lineChartData.dots[hoveredDot]" class="absolute bg-gray-900 dark:bg-gray-800 text-white text-xs px-3 py-2 rounded-lg pointer-events-none shadow-xl z-10 -translate-x-1/2 whitespace-nowrap" :style="{ left: `${(lineChartData.dots[hoveredDot].x / chartW) * 100}%`, top: `${(lineChartData.dots[hoveredDot].y / (chartH + 20)) * 100 - 16}%` }">
+                            <p class="font-semibold">{{ lineChartData.dots[hoveredDot].month }}</p>
+                            <p class="text-orange-300">{{ formatPrice(lineChartData.dots[hoveredDot].revenue) }}</p>
                         </div>
                     </div>
                 </div>

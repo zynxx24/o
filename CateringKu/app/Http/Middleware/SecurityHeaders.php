@@ -49,17 +49,28 @@ class SecurityHeaders
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
 
         // ── Content Security Policy ─────────────────────────
-        // In dev: allow Vite dev server (port 5173) for HMR & asset loading
-        $isDev = config('app.env') === 'local';
+        // FIX: Pisahkan CSP dev vs production.
+        // 'unsafe-inline' dan 'unsafe-eval' HANYA diizinkan saat lokal/dev
+        // untuk kebutuhan Vite HMR. Di production keduanya DIHAPUS karena
+        // menonaktifkan sebagian besar proteksi XSS dari CSP.
+        $isDev       = config('app.env') === 'local';
         $viteOrigins = $isDev ? ' http://127.0.0.1:5173 http://localhost:5173' : '';
+
+        // script-src: dev butuh unsafe-inline + unsafe-eval untuk Vite HMR
+        $scriptSrc = $isDev
+            ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'{$viteOrigins}"
+            : "script-src 'self'";  // Production: strict, tanpa unsafe-*
+
+        // style-src: inline styles masih diperlukan oleh Vue/Inertia SSR
+        $styleSrc = "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com{$viteOrigins}";
 
         $cspDirectives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'{$viteOrigins}", // unsafe-eval for Vite HMR
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com{$viteOrigins}",
+            $scriptSrc,
+            $styleSrc,
             "font-src 'self' https://fonts.bunny.net https://fonts.gstatic.com data:{$viteOrigins}",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 wss: https:{$viteOrigins}", // WebSocket for Vite HMR
+            "connect-src 'self' ws://127.0.0.1:5173 ws://localhost:5173 wss: https:{$viteOrigins}",
             "media-src 'self'",
             "object-src 'none'",
             "child-src 'self'",

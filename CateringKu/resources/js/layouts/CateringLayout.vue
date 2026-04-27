@@ -147,8 +147,20 @@ onUnmounted(() => {
                                         <Link @click="closeMenus" href="/profile" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">👤</span> Profil
                                         </Link>
+                                        <Link @click="closeMenus" href="/wallet" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
+                                            <span class="text-base">💰</span> Dompet Saya
+                                        </Link>
                                         <Link @click="closeMenus" href="/dashboard" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">📊</span> Dashboard
+                                        </Link>
+                                        <!-- Daftar Vendor: hanya tampil untuk customer -->
+                                        <Link
+                                            v-if="user.role === 'customer'"
+                                            @click="closeMenus"
+                                            href="/become-vendor"
+                                            class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors"
+                                        >
+                                            <span class="text-base">🏪</span> Daftar sebagai Vendor
                                         </Link>
                                         <Link @click="closeMenus" href="/settings/profile" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--ck-text-secondary)] hover:bg-ck-primary/5 hover:text-ck-primary transition-colors">
                                             <span class="text-base">⚙️</span> Pengaturan

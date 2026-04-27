@@ -8,8 +8,10 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PromoController;
+use App\Http\Controllers\VendorApplicationController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorDashboardController;
+use App\Http\Controllers\WalletController;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsVendor;
 use App\Http\Middleware\ShareCartCount;
@@ -23,12 +25,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(ShareCartCount::class)->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/search', [VendorController::class, 'index'])->name('search');
-    Route::get('/vendor/{id}', [VendorController::class, 'show'])->name('vendor.show');
+    Route::get('/vendor/{slug}', [VendorController::class, 'show'])->name('vendor.show');
     Route::get('/about', [AboutController::class, 'index'])->name('about');
-    Route::get('/contact', [ContactController::class, 'index'])->name('contact');
-    Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
-    Route::get('/terms', fn () => \Inertia\Inertia::render('Terms'))->name('terms');
-    Route::get('/privacy', fn () => \Inertia\Inertia::render('Privacy'))->name('privacy');
+    Route::get('/terms', fn() => \Inertia\Inertia::render('Terms'))->name('terms');
+    Route::get('/privacy', fn() => \Inertia\Inertia::render('Privacy'))->name('privacy');
 
     /*
     |--------------------------------------------------------------------------
@@ -41,6 +41,10 @@ Route::middleware(ShareCartCount::class)->group(function () {
         Route::post('/cart/add', [CartController::class, 'addItem'])->name('cart.add');
         Route::patch('/cart/{cartItemId}', [CartController::class, 'updateQuantity'])->name('cart.update');
         Route::delete('/cart/{cartItemId}', [CartController::class, 'removeItem'])->name('cart.remove');
+
+        // Contact (requires login)
+        Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+        Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
 
         // Checkout
         Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
@@ -57,13 +61,27 @@ Route::middleware(ShareCartCount::class)->group(function () {
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
 
         // Promo validation (API)
-        Route::post('/api/promo/validate', [PromoController::class, 'validate_'])->name('promo.validate');
+        // FIX: Rate limit — cegah brute-force kode promo (20 request per menit)
+        Route::post('/api/promo/validate', [PromoController::class, 'validate_'])->middleware('throttle:20,1')->name('promo.validate');
+
+        // Wallet
+        Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
+        // FIX: Rate limit — cegah double-submit penarikan (5 request per menit)
+        Route::post('/wallet/withdraw', [WalletController::class, 'requestWithdrawal'])->middleware('throttle:5,1')->name('wallet.withdraw');
+
+        // Vendor Registration
+        Route::get('/become-vendor', [VendorApplicationController::class, 'create'])->name('become-vendor.create');
+        // FIX: Rate limit — cegah submit aplikasi vendor berulang (3 per menit)
+        Route::post('/become-vendor', [VendorApplicationController::class, 'store'])->middleware('throttle:3,1')->name('become-vendor.store');
+        Route::get('/become-vendor/status', [VendorApplicationController::class, 'status'])->name('become-vendor.status');
 
         // Dashboard redirect based on role
         Route::get('/dashboard', function () {
             $user = auth()->user();
-            if ($user->isAdmin()) return redirect()->route('admin.dashboard');
-            if ($user->isVendor()) return redirect()->route('vendor.dashboard');
+            if ($user->isAdmin())
+                return redirect()->route('admin.dashboard');
+            if ($user->isVendor())
+                return redirect()->route('vendor.dashboard');
             return redirect()->route('orders.index');
         })->name('dashboard');
     });
@@ -81,6 +99,23 @@ Route::middleware(ShareCartCount::class)->group(function () {
         Route::patch('/payments/{id}/verify', [AdminController::class, 'verifyPayment'])->name('payments.verify');
         Route::get('/messages', [AdminController::class, 'messages'])->name('messages');
         Route::get('/messages/{id}', [AdminController::class, 'messageDetail'])->name('messages.show');
+
+        // Wallets
+        Route::get('/wallets', [AdminController::class, 'wallets'])->name('wallets');
+
+        // Withdrawals
+        Route::get('/withdrawals', [AdminController::class, 'withdrawals'])->name('withdrawals');
+        Route::patch('/withdrawals/{id}/approve', [AdminController::class, 'approveWithdrawal'])->name('withdrawals.approve');
+        Route::patch('/withdrawals/{id}/reject', [AdminController::class, 'rejectWithdrawal'])->name('withdrawals.reject');
+
+        // Vendor Applications
+        Route::get('/vendor-applications', [AdminController::class, 'vendorApplications'])->name('vendor-applications');
+        Route::patch('/vendor-applications/{id}/approve', [AdminController::class, 'approveVendorApplication'])->name('vendor-applications.approve');
+        Route::patch('/vendor-applications/{id}/reject', [AdminController::class, 'rejectVendorApplication'])->name('vendor-applications.reject');
+
+        // Commissions
+        Route::get('/commissions', [AdminController::class, 'commissions'])->name('commissions');
+        Route::patch('/commissions/rules', [AdminController::class, 'updateCommissionRule'])->name('commissions.rules.update');
     });
 
     /*
@@ -102,4 +137,4 @@ Route::middleware(ShareCartCount::class)->group(function () {
     });
 });
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';

@@ -16,7 +16,8 @@
 # ║    stop     → Hentikan semua proses                      ║
 # ╚══════════════════════════════════════════════════════════╝
 
-set -e
+# set -e intentionally removed: background processes (PHP/Vite) returning
+# non-zero exit codes should not abort the script before cleanup runs.
 
 # ─── Auto-cd ke folder project ───────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -157,28 +158,111 @@ cmd_dev() {
     php artisan route:clear 2>/dev/null || true
     php artisan view:clear 2>/dev/null || true
 
-    # Jalankan PHP + Vite secara bersamaan
-    # Jika 'concurrently' tersedia, gunakan itu
-    if npx --yes concurrently --version &>/dev/null; then
-        npx concurrently \
-            --names "PHP,Vite" \
-            --prefix-colors "magenta,cyan" \
-            --kill-others \
-            "php artisan serve --host=0.0.0.0 --port=8000" \
-            "npm run dev"
-    else
-        # Fallback: jalankan di background
-        php artisan serve --host=0.0.0.0 --port=8000 &
-        PHP_PID=$!
+    # ─── Warna tambahan ──────────────────────────────────────────
+    DIM='\033[2m'
+    MAGENTA='\033[0;35m'
 
-        npm run dev &
-        VITE_PID=$!
+    # ─── log_filter: klasifikasi setiap baris log ─────────────────
+    # Dipanggil: log_filter <SOURCE> <COLOR>
+    # Level:
+    #   ERROR  → merah   — exception, sql error, fatal, uncaught, dll
+    #   WARN   → kuning  — warning, deprecated, hydration mismatch, dll
+    #   INFO   → cyan    — server ready, HMR, inertia SSR, artisan info
+    #   DEBUG  → redup   — semua sisanya (opsional, bisa di-grep)
+    # Noise yang langsung dibuang (tidak ditampilkan sama sekali):
+    #   - npm warn tentang unknown project/env config
+    #   - Vite ready banner & LARAVEL plugin banner (sudah ada di header)
+    #   - Baris titik-titik heartbeat PHP artisan serve
+    #   - Baris kosong
+    log_filter() {
+        local src="$1"
+        local color="$2"
+        local src_label
+        src_label=$(printf "${color}[%-4s]${NC}" "$src")
 
-        # Trap Ctrl+C untuk kill kedua proses
-        trap "kill $PHP_PID $VITE_PID 2>/dev/null; echo ''; success 'Server dihentikan.'; exit 0" INT TERM
+        while IFS= read -r line; do
 
-        wait $PHP_PID $VITE_PID
-    fi
+            # ── Buang noise total ─────────────────────────────────
+            [[ "$line" == *"Unknown project config"*       ]] && continue
+            [[ "$line" == *"Unknown env config"*           ]] && continue
+            [[ "$line" == *"This will stop working"*       ]] && continue
+            [[ "$line" == *"VITE v"*                       ]] && continue
+            [[ "$line" == *"LARAVEL v"*                    ]] && continue
+            [[ "$line" == *"plugin v"*                     ]] && continue
+            [[ "$line" == *"➜  Local:"*                    ]] && continue
+            [[ "$line" == *"➜  Network:"*                  ]] && continue
+            [[ "$line" == *"➜  APP_URL:"*                  ]] && continue
+            [[ "$line" == *"Press Ctrl+C to stop"*         ]] && continue
+            # Baris heartbeat PHP: "  2026-04-23 20:36:26 ........ ~ Xms"
+            [[ "$line" =~ ^[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}[[:space:]] ]] && continue
+            # Baris kosong
+            [[ -z "${line//[[:space:]]/}" ]] && continue
+
+            # ── Klasifikasi level ─────────────────────────────────
+
+            # ERROR — exception, SQL, fatal, file not found, dll
+            if echo "$line" | grep -qiE \
+"(exception|sqlstate|fatal error|stack trace|uncaught|unhandled rejection|\
+call to undefined|class .+ not found|no such file|ENOENT|cannot open|\
+Connection refused|failed to compile|build failed|TypeError|ReferenceError|\
+SyntaxError|✗|ERROR)"; then
+                echo -e "${src_label} ${RED}${BOLD}[ERROR]${NC} $line"
+
+            # WARN — peringatan non-fatal
+            elif echo "$line" | grep -qiE \
+"(warning|deprecated|hydration (class|attr|text|node) mismatch|\
+mismatch on|could not|unable to|npm warn|caution|notice|\
+Hydration completed but contains|try again)"; then
+                echo -e "${src_label} ${YELLOW}${BOLD}[WARN ]${NC} $line"
+
+            # INFO — hal penting & actionable
+            elif echo "$line" | grep -qiE \
+"(server running|ready in|hot reload|hmr updated|page reload|\
+inertia ssr|module graph|warmed up|listening on|http://|https://|\
+Types generated|compiled successfully|INFO |✓|✔|✅|🚀)"; then
+                echo -e "${src_label} ${CYAN}${BOLD}[INFO ]${NC} $line"
+
+            # DEBUG — semua sisanya (tampil redup, mudah di-grep)
+            else
+                echo -e "${src_label} ${DIM}[DEBUG] $line${NC}"
+            fi
+
+        done
+    }
+
+    # Export agar subshell bisa menggunakan fungsi & variabel warna
+    export RED GREEN YELLOW CYAN MAGENTA NC BOLD DIM
+    export -f log_filter
+
+    # ─── Buat named pipe (FIFO) untuk masing-masing server ────────
+    PHP_FIFO=$(mktemp -u /tmp/ck_php_XXXX)
+    VITE_FIFO=$(mktemp -u /tmp/ck_vite_XXXX)
+    mkfifo "$PHP_FIFO" "$VITE_FIFO"
+
+    # ─── Cleanup saat Ctrl+C / exit ───────────────────────────────
+    cleanup() {
+        kill "$PHP_PID" "$VITE_PID" "$PHP_LOG_PID" "$VITE_LOG_PID" 2>/dev/null
+        rm -f "$PHP_FIFO" "$VITE_FIFO"
+        echo ""
+        success "Semua server dihentikan."
+    }
+    trap cleanup INT TERM
+
+    # ─── Jalankan filter log di background ────────────────────────
+    bash -c "log_filter PHP '${MAGENTA}'" < "$PHP_FIFO" &
+    PHP_LOG_PID=$!
+
+    bash -c "log_filter Vite '${CYAN}'" < "$VITE_FIFO" &
+    VITE_LOG_PID=$!
+
+    # ─── Jalankan server, arahkan ke FIFO ─────────────────────────
+    php artisan serve --host=0.0.0.0 --port=8000 > "$PHP_FIFO" 2>&1 &
+    PHP_PID=$!
+
+    npm run dev > "$VITE_FIFO" 2>&1 &
+    VITE_PID=$!
+
+    wait "$PHP_PID" "$VITE_PID"
 }
 
 cmd_migrate() {
